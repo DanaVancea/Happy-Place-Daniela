@@ -1,0 +1,11 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // Nom du Worker : Cloudflare n'accepte que minuscules, chiffres et tirets
+  // (le dépôt GitHub s'appelle happy-place-Daniela).
+  "name": "happy-place-daniela",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": "src/server.ts",
+  "observability": { "enabled": true }
+  // Secret à définir (jamais dans le code) : npx wrangler secret put OPENAI_API_KEY
+}

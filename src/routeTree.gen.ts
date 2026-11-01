@@ -15,6 +15,7 @@ import { Route as ChoisirRoleRouteImport } from './routes/choisir-role'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedManageRouteImport } from './routes/_authenticated/manage'
+import { Route as ApiSuggestionRouteImport } from './routes/api/suggestion'
 import { Route as AuthenticatedManageIndexRouteImport } from './routes/_authenticated/manage.index'
 import { Route as AuthenticatedManageBlockersRouteImport } from './routes/_authenticated/manage.blockers'
 import { Route as AuthenticatedManageMetricsRouteImport } from './routes/_authenticated/manage.metrics'
@@ -50,6 +51,11 @@ const AuthenticatedManageRoute = AuthenticatedManageRouteImport.update({
   id: '/manage',
   path: '/manage',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const ApiSuggestionRoute = ApiSuggestionRouteImport.update({
+  id: '/api/suggestion',
+  path: '/api/suggestion',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedManageIndexRoute =
   AuthenticatedManageIndexRouteImport.update({
@@ -93,6 +99,7 @@ export interface FileRoutesByFullPath {
   '/choisir-role': typeof ChoisirRoleRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/manage': typeof AuthenticatedManageRouteWithChildren
+  '/api/suggestion': typeof ApiSuggestionRoute
   '/manage/blockers': typeof AuthenticatedManageBlockersRoute
   '/manage/metrics': typeof AuthenticatedManageMetricsRoute
   '/manage/news': typeof AuthenticatedManageNewsRoute
@@ -104,6 +111,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/choisir-role': typeof ChoisirRoleRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/api/suggestion': typeof ApiSuggestionRoute
   '/': typeof AuthenticatedIndexRoute
   '/manage/blockers': typeof AuthenticatedManageBlockersRoute
   '/manage/metrics': typeof AuthenticatedManageMetricsRoute
@@ -119,6 +127,7 @@ export interface FileRoutesById {
   '/choisir-role': typeof ChoisirRoleRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/manage': typeof AuthenticatedManageRouteWithChildren
+  '/api/suggestion': typeof ApiSuggestionRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/manage/blockers': typeof AuthenticatedManageBlockersRoute
   '/_authenticated/manage/metrics': typeof AuthenticatedManageMetricsRoute
@@ -135,6 +144,7 @@ export interface FileRouteTypes {
     | '/choisir-role'
     | '/sitemap.xml'
     | '/manage'
+    | '/api/suggestion'
     | '/manage/blockers'
     | '/manage/metrics'
     | '/manage/news'
@@ -146,6 +156,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/choisir-role'
     | '/sitemap.xml'
+    | '/api/suggestion'
     | '/'
     | '/manage/blockers'
     | '/manage/metrics'
@@ -160,6 +171,7 @@ export interface FileRouteTypes {
     | '/choisir-role'
     | '/sitemap.xml'
     | '/_authenticated/manage'
+    | '/api/suggestion'
     | '/_authenticated/'
     | '/_authenticated/manage/blockers'
     | '/_authenticated/manage/metrics'
@@ -174,6 +186,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ChoisirRoleRoute: typeof ChoisirRoleRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  ApiSuggestionRoute: typeof ApiSuggestionRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -219,6 +232,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/manage'
       preLoaderRoute: typeof AuthenticatedManageRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/api/suggestion': {
+      id: '/api/suggestion'
+      path: '/api/suggestion'
+      fullPath: '/api/suggestion'
+      preLoaderRoute: typeof ApiSuggestionRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/manage/': {
       id: '/_authenticated/manage/'
@@ -304,6 +324,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ChoisirRoleRoute: ChoisirRoleRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  ApiSuggestionRoute: ApiSuggestionRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
