@@ -166,31 +166,24 @@ export function NewsEditor({
         />
       </div>
       <div className="grid gap-sm sm:grid-cols-2 lg:grid-cols-4">
-        <div className="space-y-xs">
-          {known ? (
-            <>
-              <p className={label}>DÉPARTEMENT</p>
-              <p className="p-xs font-body-md text-primary">{known}</p>
-            </>
-          ) : (
-            <>
-              <label htmlFor="n-dep" className={label}>
-                TON DÉPARTEMENT (UNE SEULE FOIS)
-              </label>
-              <select
-                id="n-dep"
-                className={field}
-                value={department}
-                onChange={(e) => setDepartment(e.target.value)}
-              >
-                <option value="">Choisir…</option>
-                {DEPARTMENTS.map((d) => (
-                  <option key={d}>{d}</option>
-                ))}
-              </select>
-            </>
-          )}
-        </div>
+        {!known && (
+          <div className="space-y-xs">
+            <label htmlFor="n-dep" className={label}>
+              TON DÉPARTEMENT (UNE SEULE FOIS)
+            </label>
+            <select
+              id="n-dep"
+              className={field}
+              value={department}
+              onChange={(e) => setDepartment(e.target.value)}
+            >
+              <option value="">Choisir…</option>
+              {DEPARTMENTS.map((d) => (
+                <option key={d}>{d}</option>
+              ))}
+            </select>
+          </div>
+        )}
         <div className="space-y-xs">
           <label htmlFor="n-level" className={label}>
             NIVEAU
