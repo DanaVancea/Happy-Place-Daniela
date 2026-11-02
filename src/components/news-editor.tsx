@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import { NewsMediaEditor } from "@/components/news-media";
 import {
   emptyMedia,
@@ -38,19 +39,24 @@ export function NewsEditor({
   all,
   author,
   email,
+  myDepartment,
   onDone,
 }: {
   editing: News | null;
   all: News[];
   author: string;
   email: string;
+  /** Département de l'admin connecté (RH, DSI, Office management), s'il est connu. */
+  myDepartment: string;
   onDone: () => void;
 }) {
   const qc = useQueryClient();
   const [title, setTitle] = useState(editing?.title ?? "");
   const [summary, setSummary] = useState(editing?.summary ?? "");
   const [body, setBody] = useState(editing?.body ?? "");
-  const [department, setDepartment] = useState(editing?.department ?? "");
+  // Le département suit le profil de l'admin connecté ; on ne le demande qu'une fois s'il est inconnu.
+  const known = editing?.department || myDepartment;
+  const [department, setDepartment] = useState(known);
   const [level, setLevel] = useState<Level>(editing ? levelOf(editing) : "information");
   const [pinned, setPinned] = useState(editing?.pinned ?? false);
   const [publishAt, setPublishAt] = useState(toLocalInput(editing?.publish_at));
@@ -80,7 +86,9 @@ export function NewsEditor({
         },
         status,
       ),
-    onSuccess: (_d, status) => {
+    onSuccess: async (_d, status) => {
+      // Premier enregistrement : on retient le département pour les prochaines actualités.
+      if (!known && department) await supabase.auth.updateUser({ data: { department } });
       toast.success(
         status === "brouillon"
           ? "Brouillon enregistré"
@@ -100,7 +108,7 @@ export function NewsEditor({
     if (Object.keys(linkErrors(media.links)).length)
       return toast.error("Corrige les liens invalides avant d'enregistrer.");
     if (status === "publiée") {
-      if (!department) return toast.error("Choisis le département avant de publier.");
+      if (!department) return toast.error("Choisis ton département avant de publier.");
       if (!summary.trim()) return toast.error("Ajoute un chapô (deux phrases) avant de publier.");
       if (pinned) {
         const others = all.filter(
@@ -159,20 +167,29 @@ export function NewsEditor({
       </div>
       <div className="grid gap-sm sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-xs">
-          <label htmlFor="n-dep" className={label}>
-            DÉPARTEMENT
-          </label>
-          <select
-            id="n-dep"
-            className={field}
-            value={department}
-            onChange={(e) => setDepartment(e.target.value)}
-          >
-            <option value="">Choisir…</option>
-            {DEPARTMENTS.map((d) => (
-              <option key={d}>{d}</option>
-            ))}
-          </select>
+          {known ? (
+            <>
+              <p className={label}>DÉPARTEMENT</p>
+              <p className="p-xs font-body-md text-primary">{known}</p>
+            </>
+          ) : (
+            <>
+              <label htmlFor="n-dep" className={label}>
+                TON DÉPARTEMENT (UNE SEULE FOIS)
+              </label>
+              <select
+                id="n-dep"
+                className={field}
+                value={department}
+                onChange={(e) => setDepartment(e.target.value)}
+              >
+                <option value="">Choisir…</option>
+                {DEPARTMENTS.map((d) => (
+                  <option key={d}>{d}</option>
+                ))}
+              </select>
+            </>
+          )}
         </div>
         <div className="space-y-xs">
           <label htmlFor="n-level" className={label}>
