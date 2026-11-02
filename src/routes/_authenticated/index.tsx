@@ -285,10 +285,17 @@ function NewsPage() {
                 {isAdmin && " Utilise « Nouvelle actualité » pour en créer une."}
               </p>
             )}
-            <div className="grid gap-sm md:grid-cols-2">
+            <div className="grid gap-md md:grid-cols-3">
               {featured.map((n, i) => (
-                <div key={n.id} className={i === 0 && featured.length > 1 ? "md:col-span-2" : ""}>
-                  <NewsCard news={n} marks={marks} query="" hero onOpen={setReading} />
+                <div key={n.id} className={i === 0 ? "md:col-span-3" : ""}>
+                  <NewsCard
+                    news={n}
+                    marks={marks}
+                    query=""
+                    hero
+                    lead={i === 0}
+                    onOpen={setReading}
+                  />
                 </div>
               ))}
             </div>
