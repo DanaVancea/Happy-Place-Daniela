@@ -459,6 +459,16 @@ export type Database = {
         }
         Returns: Database["public"]["Enums"]["app_role"]
       }
+      team_directory: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          first_name: string
+          last_name: string
+          team: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          joined_at: string
+        }[]
+      }
       bulk_import_allowed_users: {
         Args: { _dry_run?: boolean; _rows: Json }
         Returns: Json
