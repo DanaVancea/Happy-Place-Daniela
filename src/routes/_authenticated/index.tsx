@@ -222,7 +222,7 @@ function NewsPage() {
         </section>
       )}
 
-      <div className="grid gap-md lg:grid-cols-[minmax(0,1fr)_26rem] lg:items-start">
+      <div className="grid gap-md lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
         {/* Colonne de droite : bouton « Nouvelle actualité » puis indicateurs */}
         <aside
           aria-label="Indicateurs"
@@ -272,7 +272,7 @@ function NewsPage() {
             {metrics.isError && (
               <p className="text-body-sm text-error">Les indicateurs sont indisponibles.</p>
             )}
-            <div className="grid grid-cols-2 gap-sm">
+            <div className="divide-y divide-outline-variant overflow-hidden rounded border border-outline-variant bg-card">
               {sortedMetrics.map((m) => (
                 <MetricTile
                   key={m.key}

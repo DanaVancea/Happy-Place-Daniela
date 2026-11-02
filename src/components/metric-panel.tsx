@@ -101,7 +101,13 @@ function Sparkline({ points }: { points: MetricPoint[] }) {
   );
 }
 
-/** Tuile de l'encart « Indicateurs » : valeur, variation et date de mise à jour. */
+const DOT_STYLE = {
+  atteint: "bg-primary",
+  proche: "bg-secondary-fixed border border-primary",
+  retard: "bg-error",
+} as const;
+
+/** Ligne compacte de l'encart « Indicateurs » : statut, libellé, cible, mini-courbe et valeur. */
 export function MetricTile({
   metric: m,
   points,
@@ -113,34 +119,47 @@ export function MetricTile({
 }) {
   const age = daysSince(m.updated_at);
   const stale = age != null && age > STALE_DAYS;
+  const p = targetProgress(m);
   return (
     <button
       type="button"
       onClick={() => onOpen(m)}
       aria-haspopup="dialog"
-      className="text-left p-sm bg-card border border-outline-variant rounded min-w-0 hover:bg-surface-container focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      className="flex w-full items-center gap-xs px-sm py-xs text-left min-w-0 hover:bg-surface-container focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
     >
-      <p className="font-label-sm text-label-sm text-on-surface-variant uppercase wrap-anywhere">
-        {metricLabel(m)}
-      </p>
-      <p className="font-display text-[28px] leading-tight text-primary">
-        {formatMetricValue(m.value, m.unit)}
-      </p>
-      <p className={`text-[11px] font-label-sm ${trendClass(m)}`}>
-        {TREND_LABELS[m.trend]}
-        {deltaText(m) && ` · ${deltaText(m)}`}
-      </p>
-      {points && <Sparkline points={points} />}
-      <TargetLine m={m} />
-      {m.updated_at && (
-        <p
-          className={`text-[11px] font-label-sm ${stale ? "text-error" : "text-on-surface-variant"}`}
-        >
-          {stale
-            ? `Non mis à jour depuis ${age} jours`
-            : `Mis à jour le ${shortDate(m.updated_at)}`}
-        </p>
+      <span
+        aria-hidden="true"
+        title={p ? STATUS_LABELS[p.status] : undefined}
+        className={`h-[10px] w-[10px] shrink-0 rounded-full ${p ? DOT_STYLE[p.status] : "bg-outline-variant"}`}
+      />
+      <span className="min-w-0 flex-1">
+        <span className="block font-label-sm text-[11px] uppercase leading-tight text-on-surface-variant wrap-anywhere">
+          {metricLabel(m)}
+        </span>
+        <span className={`block text-[11px] leading-tight font-label-sm ${trendClass(m)}`}>
+          {m.target != null && (
+            <span className="text-on-surface-variant">
+              Cible {formatMetricValue(m.target, m.unit)} ·{" "}
+            </span>
+          )}
+          {m.trend === "hausse" ? "▲" : m.trend === "baisse" ? "▼" : "■"}
+          {deltaText(m) && ` ${deltaText(m)}`}
+        </span>
+        {stale && (
+          <span className="block text-[11px] leading-tight font-label-sm text-error">
+            Non mis à jour depuis {age} jours
+          </span>
+        )}
+      </span>
+      {points && (
+        <span className="w-[3.5rem] shrink-0">
+          <Sparkline points={points} />
+        </span>
       )}
+      <span className="min-w-[3.5rem] shrink-0 text-right font-display text-[20px] leading-tight text-primary">
+        {formatMetricValue(m.value, m.unit)}
+      </span>
+      {p && <span className="sr-only">{STATUS_LABELS[p.status]}</span>}
     </button>
   );
 }
