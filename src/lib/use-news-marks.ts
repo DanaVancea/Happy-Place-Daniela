@@ -42,6 +42,7 @@ export function useNewsMarks(isAdmin: boolean) {
   const favSet = new Set(favs.data ?? []);
   const readSet = new Set(reads.data ?? []);
   return {
+    isAdmin,
     favs: favSet,
     reads: readSet,
     counts: counts.data ?? {},
