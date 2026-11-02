@@ -73,12 +73,13 @@ export function FavoriteButton({ id, marks }: { id: string; marks: NewsMarks }) 
         e.stopPropagation();
         marks.toggleFav(id);
       }}
-      className="flex items-center rounded p-xs text-on-surface-variant hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      className={`flex items-center rounded p-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+        on
+          ? "bg-secondary-fixed text-primary"
+          : "text-on-surface-variant hover:bg-surface-container hover:text-primary"
+      }`}
     >
-      <Icon
-        name="bookmark"
-        className={on ? "text-primary [font-variation-settings:'FILL'_1]" : ""}
-      />
+      <Icon name="bookmark" className={on ? "[font-variation-settings:'FILL'_1]" : ""} />
     </button>
   );
 }
@@ -93,13 +94,13 @@ export function ReadButton({ id, marks }: { id: string; marks: NewsMarks }) {
         e.stopPropagation();
         marks.toggleRead(id);
       }}
-      className={`flex items-center gap-xs rounded border px-sm py-xs font-label-sm text-label-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+      className={`flex items-center gap-1 rounded border px-xs py-0.5 text-[11px] font-label-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
         on
           ? "border-primary bg-primary text-on-primary"
           : "border-primary bg-transparent text-primary hover:bg-surface-container"
       }`}
     >
-      <Icon name={on ? "check_circle" : "radio_button_unchecked"} />
+      <Icon name={on ? "check_circle" : "radio_button_unchecked"} className="!text-base" />
       {on ? "Lu" : "Marquer comme lu"}
     </button>
   );
@@ -111,12 +112,14 @@ export function NewsCard({
   marks,
   query,
   hero,
+  lead,
   onOpen,
 }: {
   news: News;
   marks: NewsMarks;
   query: string;
   hero?: boolean;
+  lead?: boolean;
   onOpen: (n: News) => void;
 }) {
   const level = levelOf(n);
@@ -131,11 +134,17 @@ export function NewsCard({
         type="button"
         onClick={() => onOpen(n)}
         aria-haspopup="dialog"
-        className={`flex-1 text-left min-w-0 rounded-lg p-md space-y-xs hover:bg-surface-container focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
-          hero ? "" : "pr-xl"
+        className={`flex-1 text-left min-w-0 rounded-lg space-y-xs hover:bg-surface-container focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+          hero ? `pr-xl ${lead ? "p-lg space-y-sm" : "p-lg"}` : "p-md pr-xl"
         }`}
       >
-        {hero && n.image_path && <NewsImage path={n.image_path} alt="" className="mb-xs" />}
+        {hero && n.image_path && (
+          <NewsImage
+            path={n.image_path}
+            alt=""
+            className={lead ? "mb-sm !max-h-80" : "mb-xs !max-h-48"}
+          />
+        )}
         <div className="flex flex-wrap items-center gap-xs">
           <LevelBadge news={n} />
           {unread && (
@@ -150,12 +159,12 @@ export function NewsCard({
           )}
         </div>
         <h3
-          className={`font-headline-sm text-primary wrap-anywhere ${hero ? "text-headline-sm" : "text-body-md font-bold"}`}
+          className={`font-headline-sm text-primary wrap-anywhere ${lead ? "text-headline-lg" : hero ? "text-headline-sm" : "text-body-md font-bold"}`}
         >
           <Highlight text={n.title} query={query} />
         </h3>
         <p
-          className={`font-body-md text-on-surface-variant wrap-anywhere ${hero ? "line-clamp-3" : "line-clamp-2"}`}
+          className={`font-body-md text-on-surface-variant wrap-anywhere ${lead ? "text-[1.125rem] line-clamp-4" : hero ? "line-clamp-4" : "line-clamp-2"}`}
         >
           <Highlight text={n.summary || n.body || ""} query={query} />
         </p>
