@@ -62,7 +62,7 @@ function TargetLine({ m, large }: { m: Metric; large?: boolean }) {
 
 const trendClass = (m: Metric) => {
   const good = trendIsGood(m);
-  return good === false ? "text-error" : "text-on-surface-variant";
+  return good === false ? "text-error" : good ? "text-success" : "text-on-surface-variant";
 };
 
 const daysSince = (iso?: string | null) =>
@@ -342,7 +342,7 @@ export function MetricPanel({
         label,
         value: p.value,
         delta: d === 0 ? "Stable" : `${d > 0 ? "+" : "−"}${abs}${suffix}`,
-        cls: good === false ? "text-error" : "text-on-surface-variant",
+        cls: good === false ? "text-error" : good ? "text-success" : "text-on-surface-variant",
       });
     };
     add("Mois précédent", points[points.length - 2]);
