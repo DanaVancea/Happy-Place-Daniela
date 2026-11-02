@@ -70,8 +70,47 @@ const daysSince = (iso?: string | null) =>
 const shortDate = (iso: string) =>
   new Date(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
 
+/** Mini-courbe de tendance (purement visuelle : les valeurs sont lisibles dans le panneau). */
+function Sparkline({ points }: { points: MetricPoint[] }) {
+  if (points.length < 2) return null;
+  const W = 120;
+  const H = 28;
+  const vals = points.map((p) => p.value);
+  const lo = Math.min(...vals);
+  const hi = Math.max(...vals);
+  const span = hi - lo || 1;
+  const x = (i: number) => 2 + (i / (points.length - 1)) * (W - 4);
+  const y = (v: number) => 2 + (1 - (v - lo) / span) * (H - 4);
+  const last = points.length - 1;
+  return (
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      className="w-full h-7 text-primary"
+      aria-hidden="true"
+      preserveAspectRatio="none"
+    >
+      <polyline
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        vectorEffect="non-scaling-stroke"
+        points={points.map((p, i) => `${x(i)},${y(p.value)}`).join(" ")}
+      />
+      <circle cx={x(last)} cy={y(points[last].value)} r="2.5" fill="currentColor" />
+    </svg>
+  );
+}
+
 /** Tuile de l'encart « Indicateurs » : valeur, variation et date de mise à jour. */
-export function MetricTile({ metric: m, onOpen }: { metric: Metric; onOpen: (m: Metric) => void }) {
+export function MetricTile({
+  metric: m,
+  points,
+  onOpen,
+}: {
+  metric: Metric;
+  points?: MetricPoint[];
+  onOpen: (m: Metric) => void;
+}) {
   const age = daysSince(m.updated_at);
   const stale = age != null && age > STALE_DAYS;
   return (
@@ -91,6 +130,7 @@ export function MetricTile({ metric: m, onOpen }: { metric: Metric; onOpen: (m: 
         {TREND_LABELS[m.trend]}
         {deltaText(m) && ` · ${deltaText(m)}`}
       </p>
+      {points && <Sparkline points={points} />}
       <TargetLine m={m} />
       {m.updated_at && (
         <p
@@ -262,6 +302,7 @@ export function MetricPanel({
       toast.success("Indicateur mis à jour");
       setDraft("");
       qc.invalidateQueries({ queryKey: ["metrics"] });
+      qc.invalidateQueries({ queryKey: ["metrics-history-all"] });
       qc.invalidateQueries({ queryKey: ["metric-history", m?.key] });
     },
     onError: (e: unknown) => toast.error((e as Error).message),

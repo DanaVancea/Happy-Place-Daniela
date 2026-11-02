@@ -14,7 +14,10 @@ import {
   fetchMetrics,
   fetchNews,
   publishDraftNews,
+  STATUS_LABELS,
+  targetProgress,
   type Metric,
+  type MetricStatus,
   type News,
 } from "@/lib/dashboard";
 import {
@@ -31,6 +34,8 @@ import {
   publishedAt,
   splitFeatured,
   byDateDesc,
+  fetchAllMetricHistory,
+  levelOf,
   type Filters,
 } from "@/lib/news-feed";
 import { useNewsMarks } from "@/lib/use-news-marks";
@@ -82,7 +87,13 @@ function NewsPage() {
 
   const news = useQuery({ queryKey: ["news"], queryFn: fetchNews, retry: false });
   const metrics = useQuery({ queryKey: ["metrics"], queryFn: fetchMetrics, retry: false });
+  const history = useQuery({
+    queryKey: ["metrics-history-all"],
+    queryFn: fetchAllMetricHistory,
+    retry: false,
+  });
   const marks = useNewsMarks(isAdmin);
+  const [lateFirst, setLateFirst] = useState(false);
   const onError = (e: unknown) => toast.error((e as Error).message);
 
   const publish = useMutation({
@@ -104,6 +115,31 @@ function NewsPage() {
 
   const all = useMemo(() => news.data ?? [], [news.data]);
   const live = useMemo(() => all.filter(isLive), [all]);
+  const unreadCount = live.filter((n) => !marks.reads.has(n.id)).length;
+  // Actualités urgentes pas encore lues : affichées en bandeau tout en haut
+  const urgent = useMemo(
+    () => live.filter((n) => levelOf(n) === "urgent" && !marks.reads.has(n.id)).sort(byDateDesc),
+    [live, marks.reads],
+  );
+
+  // Synthèse et tri des indicateurs selon leur statut par rapport à la cible
+  const statusOf = (m: Metric): MetricStatus | null => targetProgress(m)?.status ?? null;
+  const summary = useMemo(() => {
+    const c: Record<MetricStatus, number> = { atteint: 0, proche: 0, retard: 0 };
+    for (const m of metrics.data ?? []) {
+      const st = targetProgress(m)?.status;
+      if (st) c[st] += 1;
+    }
+    return c;
+  }, [metrics.data]);
+  const sortedMetrics = useMemo(() => {
+    const list = [...(metrics.data ?? [])];
+    if (!lateFirst) return list;
+    const rank = { retard: 0, proche: 1, atteint: 2 } as const;
+    return list.sort(
+      (a, b) => (statusOf(a) ? rank[statusOf(a)!] : 3) - (statusOf(b) ? rank[statusOf(b)!] : 3),
+    );
+  }, [metrics.data, lateFirst]);
   const searching = isSearching(filters);
   const results = useMemo(
     () => filterNews(live, filters, marks.favs, marks.reads).sort(byDateDesc),
@@ -145,6 +181,42 @@ function NewsPage() {
   return (
     <AppShell role={role} email={email} eyebrow="Vue d'ensemble" title="Actualités et indicateurs">
       {email && <DepartureNotices email={email} />}
+
+      {/* Actualités urgentes non lues */}
+      {urgent.length > 0 && (
+        <section
+          aria-label="Actualités urgentes"
+          className="space-y-xs rounded border border-error bg-error-container p-sm"
+        >
+          {urgent.slice(0, 3).map((n) => (
+            <div key={n.id} className="flex flex-wrap items-center gap-sm">
+              <span className="font-label-md text-label-md uppercase text-error">Urgent</span>
+              <button
+                type="button"
+                onClick={() => setReading(n)}
+                aria-haspopup="dialog"
+                className="flex-1 min-w-0 text-left font-body-md font-bold text-primary underline-offset-2 hover:underline wrap-anywhere"
+              >
+                {n.title}
+              </button>
+              <button
+                type="button"
+                onClick={() => marks.toggleRead(n.id)}
+                className="rounded border border-primary px-xs py-0.5 text-[11px] font-label-sm text-primary hover:bg-surface-container"
+              >
+                Marquer comme lu
+              </button>
+            </div>
+          ))}
+          {urgent.length > 3 && (
+            <p className="font-label-sm text-label-sm text-on-surface-variant">
+              + {urgent.length - 3} autre{urgent.length - 3 > 1 ? "s" : ""} actualité
+              {urgent.length - 3 > 1 ? "s" : ""} urgente{urgent.length - 3 > 1 ? "s" : ""} dans le
+              fil
+            </p>
+          )}
+        </section>
+      )}
 
       {/* Recherche et filtres */}
       <section aria-label="Recherche" className="space-y-xs">
@@ -217,7 +289,7 @@ function NewsPage() {
               checked={filters.unread}
               onChange={(e) => set({ unread: e.target.checked })}
             />
-            Non lues
+            Non lues{unreadCount > 0 ? ` (${unreadCount})` : ""}
           </label>
           {filters.query.trim().length > 0 && filters.query.trim().length < MIN_QUERY && (
             <span className="font-label-sm text-label-sm text-on-surface-variant">
@@ -246,16 +318,36 @@ function NewsPage() {
 
       {/* Indicateurs */}
       <section aria-labelledby="indicateurs-titre" className="space-y-sm">
-        <h2 id="indicateurs-titre" className="font-headline-sm text-headline-sm text-primary">
-          Indicateurs
-        </h2>
+        <div className="flex flex-wrap items-baseline gap-x-md gap-y-xs">
+          <h2 id="indicateurs-titre" className="font-headline-sm text-headline-sm text-primary">
+            Indicateurs
+          </h2>
+          {metrics.data && summary.atteint + summary.proche + summary.retard > 0 && (
+            <>
+              <p className="font-label-md text-label-md text-on-surface-variant" aria-live="polite">
+                {(["atteint", "proche", "retard"] as MetricStatus[])
+                  .filter((k) => summary[k] > 0)
+                  .map((k) => `${summary[k]} ${STATUS_LABELS[k].toLowerCase()}`)
+                  .join(" · ")}
+              </p>
+              <label className="flex items-center gap-xs font-label-sm text-label-sm">
+                <input
+                  type="checkbox"
+                  checked={lateFirst}
+                  onChange={(e) => setLateFirst(e.target.checked)}
+                />
+                En retard d'abord
+              </label>
+            </>
+          )}
+        </div>
         {metrics.isLoading && <div className="h-24 rounded bg-surface-container animate-pulse" />}
         {metrics.isError && (
           <p className="text-body-sm text-error">Les indicateurs sont indisponibles.</p>
         )}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-sm">
-          {metrics.data?.map((m) => (
-            <MetricTile key={m.key} metric={m} onOpen={setMetric} />
+          {sortedMetrics.map((m) => (
+            <MetricTile key={m.key} metric={m} points={history.data?.[m.key]} onOpen={setMetric} />
           ))}
         </div>
       </section>
