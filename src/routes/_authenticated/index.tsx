@@ -116,6 +116,7 @@ function NewsPage() {
   const adminRows = all
     .filter((n) => !isLive(n))
     .sort((a, b) => Number(isScheduled(a)) - Number(isScheduled(b)) || byDateDesc(a, b));
+  const publishedRows = [...live].sort(byDateDesc).slice(0, 10);
   const more = (list: News[]) => list.slice(0, visible);
 
   const grid = (list: News[]) => (
@@ -390,10 +391,60 @@ function NewsPage() {
               </div>
             ))}
           </div>
-          <p className="font-label-sm text-label-sm text-on-surface-variant">
-            Pour modifier ou retirer une actualité publiée, ouvre-la depuis une carte puis utilise «
-            Modifier ».
-          </p>
+          <h3 className="font-label-md text-label-md text-on-surface-variant">
+            ACTUALITÉS PUBLIÉES (10 PLUS RÉCENTES)
+          </h3>
+          {publishedRows.length === 0 && (
+            <p className="text-body-sm text-on-surface-variant italic">Aucune actualité publiée.</p>
+          )}
+          <div className="space-y-xs">
+            {publishedRows.map((n) => (
+              <div
+                key={n.id}
+                className="flex flex-wrap items-center justify-between gap-sm rounded bg-surface-container p-sm"
+              >
+                <div className="min-w-0">
+                  <p className="font-body-md text-primary wrap-anywhere">{n.title}</p>
+                  <p className="font-label-sm text-label-sm text-on-surface-variant">
+                    {isScheduled(n)
+                      ? `Programmée le ${new Date(publishedAt(n)).toLocaleString("fr-FR", { dateStyle: "long", timeStyle: "short" })}`
+                      : "Publiée"}{" "}
+                    • Par {n.author}
+                  </p>
+                </div>
+                <div className="flex items-center gap-sm shrink-0">
+                  <button
+                    type="button"
+                    className="font-label-sm text-label-sm text-on-surface-variant hover:text-primary"
+                    onClick={() => setEditor({ news: n })}
+                  >
+                    Modifier
+                  </button>
+                  <button
+                    type="button"
+                    className="font-label-sm text-label-sm text-error"
+                    disabled={remove.isPending}
+                    onClick={() => window.confirm(`Supprimer « ${n.title} » ?`) && remove.mutate(n)}
+                  >
+                    Supprimer
+                  </button>
+                  {n.status === "brouillon" && (
+                    <button
+                      type="button"
+                      disabled={publish.isPending}
+                      className="rounded bg-primary px-sm py-1 text-on-primary font-label-sm text-label-sm disabled:opacity-50"
+                      onClick={() =>
+                        window.confirm(`Publier « ${n.title} » ? Elle sera visible par tous.`) &&
+                        publish.mutate(n.id)
+                      }
+                    >
+                      Publier
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         </section>
       )}
 
