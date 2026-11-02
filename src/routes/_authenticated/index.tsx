@@ -163,7 +163,7 @@ function NewsPage() {
   const more = (list: News[]) => list.slice(0, visible);
 
   const grid = (list: News[]) => (
-    <div className="grid gap-sm sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-sm sm:grid-cols-2 xl:grid-cols-3">
       {more(list).map((n) => (
         <NewsCard key={n.id} news={n} marks={marks} query={query} onOpen={setReading} />
       ))}
@@ -222,11 +222,11 @@ function NewsPage() {
         </section>
       )}
 
-      <div className="grid gap-md lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
+      <div className="grid gap-md md:grid-cols-[minmax(0,1fr)_minmax(20rem,30%)] md:items-start">
         {/* Colonne de droite : bouton « Nouvelle actualité » puis indicateurs */}
         <aside
           aria-label="Indicateurs"
-          className="space-y-sm lg:col-start-2 lg:row-start-1 lg:sticky lg:top-sm lg:max-h-[calc(100vh-1rem)] lg:overflow-y-auto"
+          className="space-y-sm md:col-start-2 md:row-start-1 md:sticky md:top-sm md:self-start"
         >
           {isAdmin && (
             <button
@@ -272,20 +272,29 @@ function NewsPage() {
             {metrics.isError && (
               <p className="text-body-sm text-error">Les indicateurs sont indisponibles.</p>
             )}
-            <div className="divide-y divide-outline-variant overflow-hidden rounded border border-outline-variant bg-card">
-              {sortedMetrics.map((m) => (
-                <MetricTile
-                  key={m.key}
-                  metric={m}
-                  points={history.data?.[m.key]}
-                  onOpen={setMetric}
-                />
-              ))}
+            <div
+              role="region"
+              aria-label="Liste des indicateurs : fais défiler pour voir les suivants"
+              tabIndex={0}
+              className="max-h-[27rem] snap-y snap-proximity overflow-y-auto pr-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            >
+              <div className="grid grid-cols-2 gap-sm">
+                {sortedMetrics.map((m) => (
+                  <div key={m.key} className="snap-start">
+                    <MetricTile metric={m} points={history.data?.[m.key]} onOpen={setMetric} />
+                  </div>
+                ))}
+              </div>
             </div>
+            {sortedMetrics.length > 4 && (
+              <p className="font-label-sm text-label-sm text-on-surface-variant">
+                4 sur {sortedMetrics.length} affichés : fais défiler pour voir les autres.
+              </p>
+            )}
           </section>
         </aside>
 
-        <div className="min-w-0 space-y-md lg:col-start-1 lg:row-start-1">
+        <div className="min-w-0 space-y-md md:col-start-1 md:row-start-1">
           {/* Recherche et filtres */}
           <section aria-label="Recherche" className="space-y-xs">
             <div className="flex flex-col lg:flex-row gap-sm lg:items-end">
@@ -412,9 +421,9 @@ function NewsPage() {
                     {isAdmin && " Utilise « Nouvelle actualité » pour en créer une."}
                   </p>
                 )}
-                <div className="grid gap-md md:grid-cols-3">
+                <div className="grid gap-md sm:grid-cols-2 xl:grid-cols-3">
                   {featured.map((n, i) => (
-                    <div key={n.id} className={i === 0 ? "md:col-span-3" : ""}>
+                    <div key={n.id} className={i === 0 ? "col-span-full" : ""}>
                       <NewsCard
                         news={n}
                         marks={marks}
