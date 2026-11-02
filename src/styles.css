@@ -60,49 +60,49 @@
   --color-surface-container-highest: var(--surface-container-highest);
   --color-success: var(--success);
 
-  --font-display: "Bodoni Moda", Georgia, serif;
-  --font-headline-lg: "Bodoni Moda", Georgia, serif;
-  --font-headline-sm: "Bodoni Moda", Georgia, serif;
-  --font-body-md: "Inter Tight", system-ui, sans-serif;
-  --font-body-sm: "Inter Tight", system-ui, sans-serif;
-  --font-label-md: "Space Grotesk", system-ui, sans-serif;
-  --font-label-sm: "Space Grotesk", system-ui, sans-serif;
+  --font-display: "Comfortaa", "Trebuchet MS", system-ui, sans-serif;
+  --font-headline-lg: "Comfortaa", "Trebuchet MS", system-ui, sans-serif;
+  --font-headline-sm: "Comfortaa", "Trebuchet MS", system-ui, sans-serif;
+  --font-body-md: "Inter", system-ui, sans-serif;
+  --font-body-sm: "Inter", system-ui, sans-serif;
+  --font-label-md: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  --font-label-sm: "JetBrains Mono", ui-monospace, Menlo, monospace;
 
-  --text-headline-lg: 2.75rem;
-  --text-headline-lg--line-height: 1.05;
-  --text-headline-lg--letter-spacing: -0.02em;
-  --text-headline-sm: 1.375rem;
-  --text-headline-sm--line-height: 1.2;
-  --text-body-md: 0.9375rem;
-  --text-body-md--line-height: 1.55;
-  --text-body-sm: 0.8125rem;
+  --text-headline-lg: 2rem;
+  --text-headline-lg--line-height: 1.2;
+  --text-headline-lg--letter-spacing: -0.01em;
+  --text-headline-sm: 1.25rem;
+  --text-headline-sm--line-height: 1.4;
+  --text-body-md: 1rem;
+  --text-body-md--line-height: 1.6;
+  --text-body-sm: 0.875rem;
   --text-body-sm--line-height: 1.5;
-  --text-label-md: 0.75rem;
+  --text-label-md: 0.8125rem;
   --text-label-md--line-height: 1.2;
-  --text-label-md--letter-spacing: 0.08em;
+  --text-label-md--letter-spacing: 0.02em;
   --text-label-sm: 0.6875rem;
   --text-label-sm--line-height: 1.2;
-  --text-label-sm--letter-spacing: 0.1em;
+  --text-label-sm--letter-spacing: 0.04em;
 
   --spacing-xs: 0.5rem;
-  --spacing-sm: 0.75rem;
-  --spacing-md: 1.25rem;
-  --spacing-lg: 2rem;
+  --spacing-sm: 1rem;
+  --spacing-md: 1.5rem;
+  --spacing-lg: 2.5rem;
 
-  --container-interface: 88rem;
+  --container-interface: 80rem;
 
   --shadow-sm: 0 1px 0 0 var(--outline);
 }
 
 :root {
-  --radius: 0rem;
-  --background: oklch(0.968 0.004 90);
+  --radius: 0.5rem;
+  --background: oklch(0.97 0.006 100);
   --foreground: oklch(0.26 0.008 285);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.26 0.008 285);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.26 0.008 285);
-  --primary: oklch(0.28 0.009 285);
+  --primary: oklch(0.2 0.002 200);
   --on-primary: oklch(0.98 0.004 90);
   --secondary: oklch(0.72 0.062 20);
   --on-secondary: oklch(0.24 0.01 20);
@@ -116,7 +116,7 @@
   --on-error-container: oklch(0.35 0.14 25);
   --success: oklch(0.55 0.13 150);
   --outline: oklch(0.45 0.008 285);
-  --outline-variant: oklch(0.85 0.005 285);
+  --outline-variant: oklch(0.92 0.006 100);
   --surface: oklch(0.98 0.003 90);
   --on-surface-variant: oklch(0.52 0.008 285);
   --surface-container-lowest: oklch(1 0 0);
@@ -152,7 +152,7 @@
 }
 
 @utility accent-bar {
-  border-left: 3px solid var(--error);
+  border-left: 4px solid var(--secondary-fixed);
 }
 
 .material-symbols-outlined {
