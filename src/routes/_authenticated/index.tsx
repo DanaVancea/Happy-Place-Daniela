@@ -223,105 +223,110 @@ function NewsPage() {
       )}
 
       <div className="grid gap-md md:grid-cols-[minmax(0,1fr)_minmax(20rem,30%)] md:items-start">
-        <section
-          aria-label="Recherche"
-          className="min-w-0 space-y-xs md:col-start-1 md:row-start-1"
-        >
-          <div className="flex flex-col lg:flex-row gap-sm lg:items-end">
-            <div className="flex-1 space-y-xs">
-              <label
-                htmlFor="news-search"
-                className="font-label-md text-label-md text-on-surface-variant block"
+        <div className="min-w-0 space-y-md md:col-start-1 md:row-start-1 md:self-end">
+          <section aria-label="Recherche" className="space-y-xs">
+            <div className="flex flex-col lg:flex-row gap-sm lg:items-end">
+              <div className="flex-1 space-y-xs">
+                <label
+                  htmlFor="news-search"
+                  className="font-label-md text-label-md text-on-surface-variant block"
+                >
+                  RECHERCHER
+                </label>
+                <input
+                  id="news-search"
+                  type="search"
+                  value={filters.query}
+                  onChange={(e) => set({ query: e.target.value })}
+                  placeholder="Titre, chapô ou contenu…"
+                  className={`${select} w-full`}
+                />
+              </div>
+              <select
+                aria-label="Département"
+                className={select}
+                value={filters.department}
+                onChange={(e) => set({ department: e.target.value })}
               >
-                RECHERCHER
-              </label>
-              <input
-                id="news-search"
-                type="search"
-                value={filters.query}
-                onChange={(e) => set({ query: e.target.value })}
-                placeholder="Titre, chapô ou contenu…"
-                className={`${select} w-full`}
-              />
+                <option value="">Tous les départements</option>
+                {DEPARTMENTS.map((d) => (
+                  <option key={d}>{d}</option>
+                ))}
+              </select>
+              <select
+                aria-label="Importance"
+                className={select}
+                value={filters.level}
+                onChange={(e) => set({ level: e.target.value })}
+              >
+                <option value="">Toute importance</option>
+                {LEVELS.map((l) => (
+                  <option key={l} value={l}>
+                    {LEVEL_LABELS[l]}
+                  </option>
+                ))}
+              </select>
+              <select
+                aria-label="Période"
+                className={select}
+                value={filters.period}
+                onChange={(e) => set({ period: e.target.value })}
+              >
+                {PERIODS.map((p) => (
+                  <option key={p.value} value={p.value}>
+                    {p.label}
+                  </option>
+                ))}
+              </select>
             </div>
-            <select
-              aria-label="Département"
-              className={select}
-              value={filters.department}
-              onChange={(e) => set({ department: e.target.value })}
-            >
-              <option value="">Tous les départements</option>
-              {DEPARTMENTS.map((d) => (
-                <option key={d}>{d}</option>
-              ))}
-            </select>
-            <select
-              aria-label="Importance"
-              className={select}
-              value={filters.level}
-              onChange={(e) => set({ level: e.target.value })}
-            >
-              <option value="">Toute importance</option>
-              {LEVELS.map((l) => (
-                <option key={l} value={l}>
-                  {LEVEL_LABELS[l]}
-                </option>
-              ))}
-            </select>
-            <select
-              aria-label="Période"
-              className={select}
-              value={filters.period}
-              onChange={(e) => set({ period: e.target.value })}
-            >
-              {PERIODS.map((p) => (
-                <option key={p.value} value={p.value}>
-                  {p.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="flex flex-wrap items-center gap-md">
-            <label className="flex items-center gap-xs font-body-sm">
-              <input
-                type="checkbox"
-                checked={filters.favorites}
-                onChange={(e) => set({ favorites: e.target.checked })}
-              />
-              Mes favoris
-            </label>
-            <label className="flex items-center gap-xs font-body-sm">
-              <input
-                type="checkbox"
-                checked={filters.unread}
-                onChange={(e) => set({ unread: e.target.checked })}
-              />
-              Non lues{unreadCount > 0 ? ` (${unreadCount})` : ""}
-            </label>
-            {filters.query.trim().length > 0 && filters.query.trim().length < MIN_QUERY && (
-              <span className="font-label-sm text-label-sm text-on-surface-variant">
-                Saisis au moins {MIN_QUERY} caractères pour lancer la recherche.
-              </span>
-            )}
-            {searching && (
-              <>
-                <span
-                  className="font-label-sm text-label-sm text-on-surface-variant"
-                  aria-live="polite"
-                >
-                  {results.length} résultat{results.length > 1 ? "s" : ""}
+            <div className="flex flex-wrap items-center gap-md">
+              <label className="flex items-center gap-xs font-body-sm">
+                <input
+                  type="checkbox"
+                  checked={filters.favorites}
+                  onChange={(e) => set({ favorites: e.target.checked })}
+                />
+                Mes favoris
+              </label>
+              <label className="flex items-center gap-xs font-body-sm">
+                <input
+                  type="checkbox"
+                  checked={filters.unread}
+                  onChange={(e) => set({ unread: e.target.checked })}
+                />
+                Non lues{unreadCount > 0 ? ` (${unreadCount})` : ""}
+              </label>
+              {filters.query.trim().length > 0 && filters.query.trim().length < MIN_QUERY && (
+                <span className="font-label-sm text-label-sm text-on-surface-variant">
+                  Saisis au moins {MIN_QUERY} caractères pour lancer la recherche.
                 </span>
-                <button
-                  type="button"
-                  onClick={() => set(noFilters)}
-                  className="font-label-sm text-label-sm text-primary underline"
-                >
-                  Effacer les filtres
-                </button>
-              </>
-            )}
-          </div>
-        </section>
+              )}
+              {searching && (
+                <>
+                  <span
+                    className="font-label-sm text-label-sm text-on-surface-variant"
+                    aria-live="polite"
+                  >
+                    {results.length} résultat{results.length > 1 ? "s" : ""}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => set(noFilters)}
+                    className="font-label-sm text-label-sm text-primary underline"
+                  >
+                    Effacer les filtres
+                  </button>
+                </>
+              )}
+            </div>
+          </section>
+          <h2
+            id={searching ? "resultats-titre" : "une-titre"}
+            className="font-headline-sm text-headline-sm text-primary"
+          >
+            {searching ? "Résultats" : "À la une"}
+          </h2>
+        </div>
         {/* Haut de la colonne de droite : bouton « Nouvelle actualité », titre et résumé */}
         <div className="space-y-sm md:col-start-2 md:row-start-1 md:self-end">
           {isAdmin && (
@@ -409,8 +414,7 @@ function NewsPage() {
           )}
 
           {searching ? (
-            <section aria-label="Résultats" className="space-y-sm">
-              <h2 className="font-headline-sm text-headline-sm text-primary">Résultats</h2>
+            <section aria-labelledby="resultats-titre" className="space-y-sm">
               {news.data && results.length === 0 && (
                 <p className="text-body-sm text-on-surface-variant italic">
                   Aucune actualité ne correspond à ta recherche.
@@ -422,9 +426,6 @@ function NewsPage() {
           ) : (
             <>
               <section aria-labelledby="une-titre" className="space-y-sm">
-                <h2 id="une-titre" className="font-headline-sm text-headline-sm text-primary">
-                  À la une
-                </h2>
                 {news.data && featured.length === 0 && (
                   <p className="text-body-sm text-on-surface-variant italic">
                     Aucune actualité publiée.
