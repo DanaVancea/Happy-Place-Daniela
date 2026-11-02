@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,6 +16,8 @@ import {
   LEVELS,
   LEVEL_LABELS,
   MAX_PINNED,
+  fetchBlockedWords,
+  findBlockedWord,
   isFeaturedNow,
   levelOf,
   saveNews,
@@ -66,6 +68,13 @@ export function NewsEditor({
   const linkErrs = showErrs ? linkErrors(media.links) : {};
   const future = !!publishAt && new Date(publishAt).getTime() > Date.now();
 
+  const blocked = useQuery({
+    queryKey: ["blocked-words"],
+    queryFn: fetchBlockedWords,
+    retry: false,
+  });
+  const badWord = findBlockedWord(`${title} ${summary} ${body}`, blocked.data ?? []);
+
   const save = useMutation({
     mutationFn: (status: "brouillon" | "publiée") =>
       saveNews(
@@ -108,6 +117,8 @@ export function NewsEditor({
     if (Object.keys(linkErrors(media.links)).length)
       return toast.error("Corrige les liens invalides avant d'enregistrer.");
     if (status === "publiée") {
+      if (badWord)
+        return toast.error(`Le mot « ${badWord} » n'est pas autorisé. Retire-le pour publier.`);
       if (!department) return toast.error("Choisis ton département avant de publier.");
       if (!summary.trim()) return toast.error("Ajoute un chapô (deux phrases) avant de publier.");
       if (pinned) {
@@ -237,6 +248,12 @@ export function NewsEditor({
         disabled={save.isPending}
         title={title}
       />
+      {badWord && (
+        <p role="alert" className="rounded bg-error-container p-xs font-body-sm text-error">
+          Le mot « {badWord} » n'est pas autorisé : retire-le pour pouvoir publier. Tu peux toujours
+          enregistrer un brouillon.
+        </p>
+      )}
       <div className="flex flex-wrap items-center justify-end gap-sm">
         <button
           type="button"
@@ -255,7 +272,7 @@ export function NewsEditor({
         </button>
         <button
           type="button"
-          disabled={save.isPending}
+          disabled={save.isPending || !!badWord}
           onClick={() => submit("publiée")}
           className="rounded bg-primary px-md py-xs text-on-primary font-label-md text-label-md disabled:opacity-50"
         >

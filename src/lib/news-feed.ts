@@ -157,7 +157,32 @@ export async function fetchMetricHistory(key: string): Promise<MetricPoint[]> {
     .gte("recorded_at", since.toISOString())
     .order("recorded_at");
   if (error) throw error;
-  return (data ?? []).map((r) => ({ value: Number(r.value), recorded_at: r.recorded_at, is_demo: r.is_demo }));
+  return (data ?? []).map((r) => ({
+    value: Number(r.value),
+    recorded_at: r.recorded_at,
+    is_demo: r.is_demo,
+  }));
+}
+
+/* ---------- Mots interdits ---------- */
+
+const fold = (s: string) =>
+  normalize(s).replace(/œ/g, "o").replace(/æ/g, "a").replace(/\s+/g, " ").trim();
+
+export async function fetchBlockedWords(): Promise<string[]> {
+  const { data, error } = await db.from("blocked_words").select("word");
+  if (error) throw error;
+  return (data ?? []).map((r) => r.word);
+}
+
+/** Premier mot interdit trouvé (mots entiers, sans accents ni majuscules), sinon null. */
+export function findBlockedWord(text: string, words: string[]): string | null {
+  const t = fold(text);
+  for (const w of [...words].sort()) {
+    const esc = fold(w).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    if (new RegExp(`(^|[^a-z0-9])${esc}(s|x)?([^a-z0-9]|$)`).test(t)) return w;
+  }
+  return null;
 }
 
 /* ---------- Édition (Admin) ---------- */
