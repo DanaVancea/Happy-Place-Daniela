@@ -45,7 +45,7 @@ export function LevelBadge({ news }: { news: News }) {
   );
 }
 
-/** Étiquette de la ligne d'infos : « Clara · RH · il y a 3 jours · 2 min ». */
+/** Ligne d'infos. Admin : « Clara · RH · date · 2 min » ; autres rôles : département seulement (jamais l'auteur). */
 export function NewsMeta({ news, marks }: { news: News; marks: NewsMarks }) {
   const date = new Date(publishedAt(news)).toLocaleDateString("fr-FR", {
     day: "numeric",
@@ -54,8 +54,15 @@ export function NewsMeta({ news, marks }: { news: News; marks: NewsMarks }) {
   });
   return (
     <p className="font-label-sm text-label-sm text-on-surface-variant wrap-anywhere">
-      {news.author}
-      {news.department ? ` · ${news.department}` : ""} · {date} · {readingMinutes(news)} min
+      {marks.isAdmin ? (
+        <>
+          {news.author}
+          {news.department ? ` · ${news.department}` : ""} ·{" "}
+        </>
+      ) : (
+        news.department && <>{news.department} · </>
+      )}
+      {date} · {readingMinutes(news)} min
       {marks.counts[news.id] != null &&
         ` · ${marks.counts[news.id]} lecture${marks.counts[news.id] > 1 ? "s" : ""}`}
     </p>
