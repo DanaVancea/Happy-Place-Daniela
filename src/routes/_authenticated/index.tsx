@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { DepartureNotices } from "@/components/departure-notices";
 import { Icon } from "@/components/icon";
-import { MetricPanel, MetricTile } from "@/components/metric-panel";
+import { MetricPanel, MetricTile, STATUS_STYLE } from "@/components/metric-panel";
 import { NewsCard } from "@/components/news-feed";
 import { NewsEditor } from "@/components/news-editor";
 import { NewsReader } from "@/components/news-reader";
@@ -223,79 +223,7 @@ function NewsPage() {
       )}
 
       <div className="grid gap-md md:grid-cols-[minmax(0,1fr)_minmax(20rem,30%)] md:items-start">
-        {/* Colonne de droite : bouton « Nouvelle actualité » puis indicateurs */}
-        <aside
-          aria-label="Indicateurs"
-          className="space-y-sm md:col-start-2 md:row-start-1 md:sticky md:top-sm md:self-start"
-        >
-          {isAdmin && (
-            <button
-              type="button"
-              onClick={() => setEditor({ news: null })}
-              disabled={!!editor && !editor.news}
-              className="flex w-full items-center justify-center gap-xs rounded bg-primary px-md py-xs text-on-primary font-label-md text-label-md disabled:opacity-50"
-            >
-              <Icon name="add" /> NOUVELLE ACTUALITÉ
-            </button>
-          )}
-          {/* Indicateurs */}
-          <section aria-labelledby="indicateurs-titre" className="space-y-sm">
-            <div className="flex flex-wrap items-baseline gap-x-md gap-y-xs">
-              <h2 id="indicateurs-titre" className="font-headline-sm text-headline-sm text-primary">
-                Indicateurs
-              </h2>
-              {metrics.data && summary.atteint + summary.proche + summary.retard > 0 && (
-                <>
-                  <p
-                    className="font-label-md text-label-md text-on-surface-variant"
-                    aria-live="polite"
-                  >
-                    {(["atteint", "proche", "retard"] as MetricStatus[])
-                      .filter((k) => summary[k] > 0)
-                      .map((k) => `${summary[k]} ${STATUS_LABELS[k].toLowerCase()}`)
-                      .join(" · ")}
-                  </p>
-                  <label className="flex items-center gap-xs font-label-sm text-label-sm">
-                    <input
-                      type="checkbox"
-                      checked={lateFirst}
-                      onChange={(e) => setLateFirst(e.target.checked)}
-                    />
-                    En retard d'abord
-                  </label>
-                </>
-              )}
-            </div>
-            {metrics.isLoading && (
-              <div className="h-24 rounded bg-surface-container animate-pulse" />
-            )}
-            {metrics.isError && (
-              <p className="text-body-sm text-error">Les indicateurs sont indisponibles.</p>
-            )}
-            <div
-              role="region"
-              aria-label="Liste des indicateurs : fais défiler pour voir les suivants"
-              tabIndex={0}
-              className="max-h-[27rem] snap-y snap-proximity overflow-y-auto pr-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-            >
-              <div className="grid grid-cols-2 gap-sm">
-                {sortedMetrics.map((m) => (
-                  <div key={m.key} className="snap-start">
-                    <MetricTile metric={m} points={history.data?.[m.key]} onOpen={setMetric} />
-                  </div>
-                ))}
-              </div>
-            </div>
-            {sortedMetrics.length > 4 && (
-              <p className="font-label-sm text-label-sm text-on-surface-variant">
-                4 sur {sortedMetrics.length} affichés : fais défiler pour voir les autres.
-              </p>
-            )}
-          </section>
-        </aside>
-
-        <div className="min-w-0 space-y-md md:col-start-1 md:row-start-1">
-          {/* Recherche et filtres */}
+        <div className="min-w-0 space-y-md md:col-start-1 md:row-start-1 md:self-end">
           <section aria-label="Recherche" className="space-y-xs">
             <div className="flex flex-col lg:flex-row gap-sm lg:items-end">
               <div className="flex-1 space-y-xs">
@@ -392,15 +320,101 @@ function NewsPage() {
               )}
             </div>
           </section>
+          <h2
+            id={searching ? "resultats-titre" : "une-titre"}
+            className="font-headline-sm text-headline-sm text-primary"
+          >
+            {searching ? "Résultats" : "À la une"}
+          </h2>
+        </div>
+        {/* Haut de la colonne de droite : bouton « Nouvelle actualité », titre et résumé */}
+        <div className="space-y-sm md:col-start-2 md:row-start-1 md:self-end">
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => setEditor({ news: null })}
+              disabled={!!editor && !editor.news}
+              className="flex w-full items-center justify-center gap-xs rounded bg-primary px-md py-xs text-on-primary font-label-md text-label-md disabled:opacity-50"
+            >
+              <Icon name="add" /> NOUVELLE ACTUALITÉ
+            </button>
+          )}
+          <div className="space-y-xs">
+            <div className="flex items-center justify-between gap-sm">
+              <h2 id="indicateurs-titre" className="font-headline-sm text-headline-sm text-primary">
+                Indicateurs
+              </h2>
+              {metrics.data && summary.atteint + summary.proche + summary.retard > 0 && (
+                <label className="flex items-center gap-xs font-label-sm text-label-sm">
+                  <input
+                    type="checkbox"
+                    checked={lateFirst}
+                    onChange={(e) => setLateFirst(e.target.checked)}
+                  />
+                  En retard d'abord
+                </label>
+              )}
+            </div>
+            {metrics.data && summary.atteint + summary.proche + summary.retard > 0 && (
+              <p className="flex flex-wrap gap-xs" aria-live="polite">
+                {(["atteint", "proche", "retard"] as MetricStatus[])
+                  .filter((k) => summary[k] > 0)
+                  .map((k) => (
+                    <span
+                      key={k}
+                      className={`rounded px-xs py-0.5 text-[11px] font-label-sm ${STATUS_STYLE[k]}`}
+                    >
+                      {summary[k]} {STATUS_LABELS[k].toLowerCase()}
+                    </span>
+                  ))}
+              </p>
+            )}
+          </div>
+        </div>
 
+        {/* Colonne de droite : tuiles, alignées sur « À la une » */}
+        <aside
+          aria-labelledby="indicateurs-titre"
+          className="space-y-sm md:col-start-2 md:row-start-2 md:sticky md:top-sm md:self-start"
+        >
+          {/* Indicateurs */}
+          <section aria-labelledby="indicateurs-titre" className="space-y-sm">
+            {metrics.isLoading && (
+              <div className="h-24 rounded bg-surface-container animate-pulse" />
+            )}
+            {metrics.isError && (
+              <p className="text-body-sm text-error">Les indicateurs sont indisponibles.</p>
+            )}
+            <div
+              role="region"
+              aria-label="Liste des indicateurs : fais défiler pour voir les suivants"
+              tabIndex={0}
+              className="max-h-[27rem] snap-y snap-proximity overflow-y-auto pr-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            >
+              <div className="grid grid-cols-2 gap-sm">
+                {sortedMetrics.map((m) => (
+                  <div key={m.key} className="snap-start">
+                    <MetricTile metric={m} points={history.data?.[m.key]} onOpen={setMetric} />
+                  </div>
+                ))}
+              </div>
+            </div>
+            {sortedMetrics.length > 4 && (
+              <p className="font-label-sm text-label-sm text-on-surface-variant">
+                4 sur {sortedMetrics.length} affichés : fais défiler pour voir les autres.
+              </p>
+            )}
+          </section>
+        </aside>
+
+        <div className="min-w-0 space-y-md md:col-start-1 md:row-start-2">
           {news.isLoading && <div className="h-40 rounded bg-surface-container animate-pulse" />}
           {news.isError && (
             <p className="text-body-sm text-error">Les actualités sont indisponibles.</p>
           )}
 
           {searching ? (
-            <section aria-label="Résultats" className="space-y-sm">
-              <h2 className="font-headline-sm text-headline-sm text-primary">Résultats</h2>
+            <section aria-labelledby="resultats-titre" className="space-y-sm">
               {news.data && results.length === 0 && (
                 <p className="text-body-sm text-on-surface-variant italic">
                   Aucune actualité ne correspond à ta recherche.
@@ -412,9 +426,6 @@ function NewsPage() {
           ) : (
             <>
               <section aria-labelledby="une-titre" className="space-y-sm">
-                <h2 id="une-titre" className="font-headline-sm text-headline-sm text-primary">
-                  À la une
-                </h2>
                 {news.data && featured.length === 0 && (
                   <p className="text-body-sm text-on-surface-variant italic">
                     Aucune actualité publiée.
@@ -423,7 +434,7 @@ function NewsPage() {
                 )}
                 <div className="grid gap-md sm:grid-cols-2 xl:grid-cols-3">
                   {featured.map((n, i) => (
-                    <div key={n.id} className={i === 0 ? "col-span-full" : "h-full"}>
+                    <div key={n.id} className={i === 0 ? "col-span-full" : "flex *:w-full"}>
                       <NewsCard
                         news={n}
                         marks={marks}

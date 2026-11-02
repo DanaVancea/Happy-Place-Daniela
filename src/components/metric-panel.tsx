@@ -23,7 +23,7 @@ export function metricLabel(m: Metric) {
   return m.label;
 }
 
-const STATUS_STYLE = {
+export const STATUS_STYLE = {
   atteint: "bg-secondary-fixed text-primary",
   proche: "border border-outline text-primary",
   retard: "bg-error-container text-error",
