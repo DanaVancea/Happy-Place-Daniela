@@ -322,7 +322,7 @@ function NewsPage() {
           </section>
           <h2
             id={searching ? "resultats-titre" : "une-titre"}
-            className="font-headline-sm text-headline-sm text-primary"
+            className="font-headline-lg text-headline-lg font-bold text-primary"
           >
             {searching ? "Résultats" : "À la une"}
           </h2>
@@ -341,7 +341,10 @@ function NewsPage() {
           )}
           <div className="space-y-xs">
             <div className="flex items-center justify-between gap-sm">
-              <h2 id="indicateurs-titre" className="font-headline-sm text-headline-sm text-primary">
+              <h2
+                id="indicateurs-titre"
+                className="font-headline-lg text-headline-lg font-bold text-primary"
+              >
                 Indicateurs
               </h2>
               {metrics.data && summary.atteint + summary.proche + summary.retard > 0 && (
@@ -351,7 +354,7 @@ function NewsPage() {
                     checked={lateFirst}
                     onChange={(e) => setLateFirst(e.target.checked)}
                   />
-                  En retard d'abord
+                  À améliorer d'abord
                 </label>
               )}
             </div>

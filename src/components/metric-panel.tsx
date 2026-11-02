@@ -52,7 +52,7 @@ function TargetLine({ m, large }: { m: Metric; large?: boolean }) {
         <div className="h-full rounded bg-primary" style={{ width: `${p.ratio * 100}%` }} />
       </div>
       <span
-        className={`inline-block rounded px-xs py-0.5 text-[11px] font-label-sm ${STATUS_STYLE[p.status]}`}
+        className={`inline-block whitespace-nowrap rounded px-xs py-0.5 text-[11px] font-label-sm ${STATUS_STYLE[p.status]}`}
       >
         {STATUS_LABELS[p.status]}
       </span>

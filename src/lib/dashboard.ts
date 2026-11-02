@@ -76,7 +76,7 @@ export type MetricStatus = "atteint" | "proche" | "retard";
 export const STATUS_LABELS: Record<MetricStatus, string> = {
   atteint: "Atteint",
   proche: "Proche de la cible",
-  retard: "En retard",
+  retard: "À améliorer",
 };
 
 /** Avancement vers la cible (0 à 1+) et statut ; null si aucune cible. */
