@@ -65,7 +65,7 @@ export function ImageCropper({
   }, []);
 
   if (!url || !crop || !img.current) {
-    return <div className="aspect-video w-full max-w-md bg-surface-container animate-pulse" />;
+    return <div className="aspect-video w-full max-w-[28rem] bg-surface-container animate-pulse" />;
   }
   const w = img.current.naturalWidth;
   const h = img.current.naturalHeight;
@@ -74,7 +74,7 @@ export function ImageCropper({
   const pxPerSrc = frameW / r.vw;
 
   return (
-    <div className="space-y-xs max-w-md">
+    <div className="w-full max-w-[28rem] space-y-xs">
       <p className="font-label-sm text-label-sm text-on-surface-variant">
         APERÇU : voici l'image telle qu'elle sera affichée
       </p>

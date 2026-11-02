@@ -52,7 +52,7 @@ export function NewsReader({
               </div>
             </div>
             <div className="flex-1 overflow-y-auto p-md space-y-md">
-              {n.image_path && <NewsImage path={n.image_path} alt={n.title} className="mx-auto max-w-xl" />}
+              {n.image_path && <NewsImage path={n.image_path} alt={n.title} className="mx-auto max-w-[36rem]" />}
               {n.summary && (
                 <p className="font-body-md font-bold text-primary wrap-anywhere">{n.summary}</p>
               )}

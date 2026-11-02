@@ -98,7 +98,7 @@ export function NewsMediaEditor({
             />
           ) : (
             showExisting && (
-              <div className="max-w-md space-y-xs">
+              <div className="w-full max-w-[28rem] space-y-xs">
                 <NewsImage path={value.existingPath!} alt={title || "Image de l'actualité"} />
                 <p className="font-label-sm text-label-sm text-on-surface-variant">
                   Pour recadrer cette image, clique sur « Remplacer » et choisis-la à nouveau.
