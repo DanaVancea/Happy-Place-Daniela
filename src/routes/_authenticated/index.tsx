@@ -396,7 +396,7 @@ function NewsPage() {
             >
               <div className="grid grid-cols-2 gap-sm">
                 {sortedMetrics.map((m) => (
-                  <div key={m.key} className="snap-start">
+                  <div key={m.key} className="flex snap-start">
                     <MetricTile metric={m} points={history.data?.[m.key]} onOpen={setMetric} />
                   </div>
                 ))}

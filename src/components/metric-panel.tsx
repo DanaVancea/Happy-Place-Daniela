@@ -118,7 +118,7 @@ export function MetricTile({
       type="button"
       onClick={() => onOpen(m)}
       aria-haspopup="dialog"
-      className="text-left p-sm bg-card border border-outline-variant rounded min-w-0 hover:bg-surface-container focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      className="w-full text-left p-sm bg-card border border-outline-variant rounded min-w-0 hover:bg-surface-container focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
     >
       <p className="font-label-sm text-label-sm text-on-surface-variant uppercase wrap-anywhere">
         {metricLabel(m)}
