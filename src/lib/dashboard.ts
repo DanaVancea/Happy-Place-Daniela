@@ -153,7 +153,7 @@ export async function fetchMySubmissions(email: string): Promise<Submission[]> {
     .select("*")
     .ilike("submitted_by_email", email)
     .order("created_at", { ascending: false })
-    .limit(10);
+    .limit(50);
   if (error) throw error;
   return (data ?? []) as Submission[];
 }
