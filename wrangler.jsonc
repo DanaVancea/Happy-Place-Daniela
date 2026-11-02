@@ -6,6 +6,8 @@
   "compatibility_date": "2026-10-01",
   "compatibility_flags": ["nodejs_compat"],
   "main": "src/server.ts",
-  "observability": { "enabled": true }
+  "observability": { "enabled": true },
+  // Requis par Cloudflare pour déployer un aperçu (wrangler preview) des branches de PR.
+  "previews": {}
   // Secret à définir (jamais dans le code) : npx wrangler secret put OPENAI_API_KEY
 }
