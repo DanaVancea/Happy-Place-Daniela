@@ -176,7 +176,7 @@ export function NewsEditor({
           placeholder="Rédige l'actualité…"
         />
       </div>
-      <div className="grid gap-sm sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid items-end gap-sm sm:grid-cols-2 lg:grid-cols-4">
         {!known && (
           <div className="space-y-xs">
             <label htmlFor="n-dep" className={label}>
