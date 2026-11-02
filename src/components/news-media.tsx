@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { ImageCropper } from "@/components/image-cropper";
 import {
   MAX_NEWS_LINKS,
   NEWS_IMAGE_TYPES,
@@ -18,7 +19,7 @@ function I({ name, className = "" }: { name: string; className?: string }) {
 export function NewsImage({ path, alt, className = "" }: { path: string; alt: string; className?: string }) {
   const q = useQuery({ queryKey: ["news-image", path], queryFn: () => signedNewsImageUrl(path), staleTime: 50 * 60 * 1000, retry: false });
   if (!q.data) return null;
-  return <img src={q.data} alt={alt} className={`w-full max-h-60 object-cover border border-outline-variant ${className}`} />;
+  return <img src={q.data} alt={alt} className={`w-full object-cover border border-outline-variant aspect-video ${className}`} />;
 }
 
 export function NewsLinks({ links }: { links: unknown }) {
@@ -60,8 +61,8 @@ export function NewsMediaEditor({
 }) {
   const input = useRef<HTMLInputElement>(null);
   const [imgError, setImgError] = useState<string | null>(null);
-  const preview = useMemo(() => (value.file ? URL.createObjectURL(value.file) : null), [value.file]);
-  useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
+  // Image d'origine choisie : on la garde pour pouvoir recadrer sans perte
+  const [original, setOriginal] = useState<File | null>(null);
   const showExisting = !value.file && value.existingPath && !value.removeExisting;
   const hasImage = !!value.file || !!showExisting;
   const full = value.links.length >= MAX_NEWS_LINKS;
@@ -83,22 +84,37 @@ export function NewsMediaEditor({
           const err = imageError(f);
           setImgError(err);
           if (err) { toast.error(err); return; }
+          setOriginal(f);
           onChange({ ...value, file: f });
         }}
       />
       {hasImage && (
         <div className="space-y-xs">
-          {preview ? (
-            <img src={preview} alt={title || "Aperçu de l'image"} className="w-full max-w-xs max-h-40 object-cover border border-outline-variant" />
+          {original && value.file ? (
+            <ImageCropper
+              file={original}
+              disabled={disabled}
+              onChange={(cropped) => onChange({ ...value, file: cropped })}
+            />
           ) : (
-            showExisting && <NewsImage path={value.existingPath!} alt={title || "Image de l'actualité"} className="max-w-xs max-h-40" />
+            showExisting && (
+              <div className="w-full max-w-[28rem] space-y-xs">
+                <NewsImage path={value.existingPath!} alt={title || "Image de l'actualité"} />
+                <p className="font-label-sm text-label-sm text-on-surface-variant">
+                  Pour recadrer cette image, clique sur « Remplacer » et choisis-la à nouveau.
+                </p>
+              </div>
+            )
           )}
           <div className="flex gap-sm">
             <button type="button" disabled={disabled} onClick={pick} className="font-label-sm text-label-sm text-primary underline disabled:opacity-50">Remplacer</button>
             <button
               type="button"
               disabled={disabled}
-              onClick={() => onChange({ ...value, file: null, removeExisting: !!value.existingPath })}
+              onClick={() => {
+                setOriginal(null);
+                onChange({ ...value, file: null, removeExisting: !!value.existingPath });
+              }}
               className="font-label-sm text-label-sm text-error underline disabled:opacity-50"
             >
               Retirer
