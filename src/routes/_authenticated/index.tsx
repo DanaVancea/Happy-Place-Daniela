@@ -71,6 +71,9 @@ function NewsPage() {
     (typeof meta.name === "string" && meta.name) ||
     myEmail;
 
+  const myDepartment = (DEPARTMENTS as readonly string[]).includes(String(meta.department))
+    ? String(meta.department)
+    : "";
   const [filters, setFilters] = useState<Filters>(noFilters);
   const [visible, setVisible] = useState(PAGE_SIZE);
   const [reading, setReading] = useState<News | null>(null);
@@ -339,11 +342,12 @@ function NewsPage() {
               all={all}
               author={myName}
               email={myEmail}
+              myDepartment={myDepartment}
               onDone={() => setEditor(null)}
             />
           )}
-          <h3 className="font-label-md text-label-md text-on-surface-variant">
-            BROUILLONS ET PUBLICATIONS PROGRAMMÉES
+          <h3 className="font-headline-sm text-headline-sm text-primary pt-sm">
+            Brouillons et actualités programmées ({adminRows.length})
           </h3>
           {adminRows.length === 0 && (
             <p className="text-body-sm text-on-surface-variant italic">
@@ -357,7 +361,7 @@ function NewsPage() {
                 className="flex flex-wrap items-center justify-between gap-sm rounded bg-surface-container p-sm"
               >
                 <div className="min-w-0">
-                  <p className="font-body-md text-primary wrap-anywhere">{n.title}</p>
+                  <p className="font-body-md font-bold text-primary wrap-anywhere">{n.title}</p>
                   <p className="font-label-sm text-label-sm text-on-surface-variant">
                     {isScheduled(n)
                       ? `Programmée le ${new Date(publishedAt(n)).toLocaleString("fr-FR", { dateStyle: "long", timeStyle: "short" })}`
@@ -398,8 +402,8 @@ function NewsPage() {
               </div>
             ))}
           </div>
-          <h3 className="font-label-md text-label-md text-on-surface-variant">
-            ACTUALITÉS PUBLIÉES (10 PLUS RÉCENTES)
+          <h3 className="font-headline-sm text-headline-sm text-primary pt-sm">
+            Actualités publiées ({publishedRows.length} plus récentes)
           </h3>
           {publishedRows.length === 0 && (
             <p className="text-body-sm text-on-surface-variant italic">Aucune actualité publiée.</p>
@@ -411,7 +415,7 @@ function NewsPage() {
                 className="flex flex-wrap items-center justify-between gap-sm rounded bg-surface-container p-sm"
               >
                 <div className="min-w-0">
-                  <p className="font-body-md text-primary wrap-anywhere">{n.title}</p>
+                  <p className="font-body-md font-bold text-primary wrap-anywhere">{n.title}</p>
                   <p className="font-label-sm text-label-sm text-on-surface-variant">
                     {isScheduled(n)
                       ? `Programmée le ${new Date(publishedAt(n)).toLocaleString("fr-FR", { dateStyle: "long", timeStyle: "short" })}`
