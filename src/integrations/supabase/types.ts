@@ -264,9 +264,51 @@ export type Database = {
         }
         Relationships: []
       }
+      news_favorites: {
+        Row: {
+          news_id: string
+          user_id: string
+          created_at: string
+        }
+        Insert: {
+          news_id: string
+          user_id?: string
+          created_at?: string
+        }
+        Update: {
+          news_id?: string
+          user_id?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      news_reads: {
+        Row: {
+          news_id: string
+          user_id: string
+          read_at: string
+        }
+        Insert: {
+          news_id: string
+          user_id?: string
+          read_at?: string
+        }
+        Update: {
+          news_id?: string
+          user_id?: string
+          read_at?: string
+        }
+        Relationships: []
+      }
       news: {
         Row: {
           author: string
+          department: string | null
+          featured_until: string | null
+          level: string
+          pinned: boolean
+          publish_at: string | null
+          summary: string | null
           author_email: string | null
           body: string | null
           created_at: string
@@ -279,6 +321,12 @@ export type Database = {
         }
         Insert: {
           author?: string
+          department?: string | null
+          featured_until?: string | null
+          level?: string
+          pinned?: boolean
+          publish_at?: string | null
+          summary?: string | null
           author_email?: string | null
           body?: string | null
           created_at?: string
@@ -291,6 +339,12 @@ export type Database = {
         }
         Update: {
           author?: string
+          department?: string | null
+          featured_until?: string | null
+          level?: string
+          pinned?: boolean
+          publish_at?: string | null
+          summary?: string | null
           author_email?: string | null
           body?: string | null
           created_at?: string
@@ -458,6 +512,10 @@ export type Database = {
           _team?: string | null
         }
         Returns: Database["public"]["Enums"]["app_role"]
+      }
+      news_read_counts: {
+        Args: Record<PropertyKey, never>
+        Returns: { news_id: string; reads: number }[]
       }
       team_directory: {
         Args: Record<PropertyKey, never>
