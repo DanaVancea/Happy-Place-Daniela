@@ -33,12 +33,6 @@ const STATUS_STYLE = {
 function TargetLine({ m, large }: { m: Metric; large?: boolean }) {
   const p = targetProgress(m);
   if (!p) return null;
-  const gap = formatMetricValue(Math.abs(p.gap), m.unit === "%" ? null : m.unit);
-  const gapText = p.reached
-    ? p.gap === 0
-      ? "cible atteinte"
-      : `${gap}${m.unit === "%" ? " pts" : ""} au-delà`
-    : `${gap}${m.unit === "%" ? " pts" : ""} ${m.direction === "baisse" ? "à gagner" : "restants"}`;
   return (
     <div className="space-y-0.5">
       <p
@@ -46,8 +40,6 @@ function TargetLine({ m, large }: { m: Metric; large?: boolean }) {
       >
         Cible :{" "}
         <span className="text-primary font-bold">{formatMetricValue(m.target!, m.unit)}</span>
-        {" · "}
-        {gapText}
       </p>
       <div
         className="h-1.5 rounded bg-surface-container-high"

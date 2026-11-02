@@ -44,7 +44,7 @@ export const Route = createFileRoute("/_authenticated/")({
         content:
           "Les actualités du cabinet et les indicateurs clés, sur une même page pour une vue rapide.",
       },
-      { property: "og:title", content: "Happy Place — Actualités" },
+      { property: "og:title", content: "Happy Place — Actualités et indicateurs" },
       {
         property: "og:description",
         content: "Suivez les actualités du cabinet et ses indicateurs clés.",
@@ -143,7 +143,7 @@ function NewsPage() {
     );
 
   return (
-    <AppShell role={role} email={email} eyebrow="Vue d'ensemble" title="Actualités">
+    <AppShell role={role} email={email} eyebrow="Vue d'ensemble" title="Actualités et indicateurs">
       {email && <DepartureNotices email={email} />}
 
       {/* Recherche et filtres */}
