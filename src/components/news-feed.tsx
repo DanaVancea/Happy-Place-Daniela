@@ -126,7 +126,7 @@ export function NewsCard({
   const unread = !marks.reads.has(n.id) && isFresh(n) && !isScheduled(n);
   return (
     <article
-      className={`relative bg-card border border-outline-variant rounded-lg min-w-0 flex flex-col ${
+      className={`relative h-full bg-card border border-outline-variant rounded-lg min-w-0 flex flex-col ${
         level === "urgent" ? "accent-bar" : ""
       }`}
     >

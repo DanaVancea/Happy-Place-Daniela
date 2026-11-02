@@ -423,7 +423,7 @@ function NewsPage() {
                 )}
                 <div className="grid gap-md sm:grid-cols-2 xl:grid-cols-3">
                   {featured.map((n, i) => (
-                    <div key={n.id} className={i === 0 ? "col-span-full" : ""}>
+                    <div key={n.id} className={i === 0 ? "col-span-full" : "h-full"}>
                       <NewsCard
                         news={n}
                         marks={marks}
