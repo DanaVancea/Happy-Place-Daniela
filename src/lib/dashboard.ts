@@ -18,6 +18,12 @@ export type News = {
   created_at: string;
   image_path?: string | null;
   links?: unknown;
+  summary?: string | null;
+  department?: string | null;
+  level?: string;
+  pinned?: boolean;
+  publish_at?: string | null;
+  featured_until?: string | null;
 };
 
 export type Submission = {
@@ -60,6 +66,7 @@ export type Metric = {
   trend: "hausse" | "baisse" | "stable";
   previous_value: number | null;
   delta: number | string | null;
+  updated_at?: string | null;
 };
 
 export const TREND_LABELS: Record<Metric["trend"], string> = {
