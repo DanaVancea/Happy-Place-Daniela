@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { DepartureNotices } from "@/components/departure-notices";
 import { Icon } from "@/components/icon";
-import { MetricPanel, MetricTile } from "@/components/metric-panel";
+import { MetricPanel, MetricTile, STATUS_STYLE } from "@/components/metric-panel";
 import { NewsCard } from "@/components/news-feed";
 import { NewsEditor } from "@/components/news-editor";
 import { NewsReader } from "@/components/news-reader";
@@ -223,11 +223,107 @@ function NewsPage() {
       )}
 
       <div className="grid gap-md md:grid-cols-[minmax(0,1fr)_minmax(20rem,30%)] md:items-start">
-        {/* Colonne de droite : bouton « Nouvelle actualité » puis indicateurs */}
-        <aside
-          aria-label="Indicateurs"
-          className="space-y-sm md:col-start-2 md:row-start-1 md:sticky md:top-sm md:self-start"
+        <section
+          aria-label="Recherche"
+          className="min-w-0 space-y-xs md:col-start-1 md:row-start-1"
         >
+          <div className="flex flex-col lg:flex-row gap-sm lg:items-end">
+            <div className="flex-1 space-y-xs">
+              <label
+                htmlFor="news-search"
+                className="font-label-md text-label-md text-on-surface-variant block"
+              >
+                RECHERCHER
+              </label>
+              <input
+                id="news-search"
+                type="search"
+                value={filters.query}
+                onChange={(e) => set({ query: e.target.value })}
+                placeholder="Titre, chapô ou contenu…"
+                className={`${select} w-full`}
+              />
+            </div>
+            <select
+              aria-label="Département"
+              className={select}
+              value={filters.department}
+              onChange={(e) => set({ department: e.target.value })}
+            >
+              <option value="">Tous les départements</option>
+              {DEPARTMENTS.map((d) => (
+                <option key={d}>{d}</option>
+              ))}
+            </select>
+            <select
+              aria-label="Importance"
+              className={select}
+              value={filters.level}
+              onChange={(e) => set({ level: e.target.value })}
+            >
+              <option value="">Toute importance</option>
+              {LEVELS.map((l) => (
+                <option key={l} value={l}>
+                  {LEVEL_LABELS[l]}
+                </option>
+              ))}
+            </select>
+            <select
+              aria-label="Période"
+              className={select}
+              value={filters.period}
+              onChange={(e) => set({ period: e.target.value })}
+            >
+              {PERIODS.map((p) => (
+                <option key={p.value} value={p.value}>
+                  {p.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex flex-wrap items-center gap-md">
+            <label className="flex items-center gap-xs font-body-sm">
+              <input
+                type="checkbox"
+                checked={filters.favorites}
+                onChange={(e) => set({ favorites: e.target.checked })}
+              />
+              Mes favoris
+            </label>
+            <label className="flex items-center gap-xs font-body-sm">
+              <input
+                type="checkbox"
+                checked={filters.unread}
+                onChange={(e) => set({ unread: e.target.checked })}
+              />
+              Non lues{unreadCount > 0 ? ` (${unreadCount})` : ""}
+            </label>
+            {filters.query.trim().length > 0 && filters.query.trim().length < MIN_QUERY && (
+              <span className="font-label-sm text-label-sm text-on-surface-variant">
+                Saisis au moins {MIN_QUERY} caractères pour lancer la recherche.
+              </span>
+            )}
+            {searching && (
+              <>
+                <span
+                  className="font-label-sm text-label-sm text-on-surface-variant"
+                  aria-live="polite"
+                >
+                  {results.length} résultat{results.length > 1 ? "s" : ""}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => set(noFilters)}
+                  className="font-label-sm text-label-sm text-primary underline"
+                >
+                  Effacer les filtres
+                </button>
+              </>
+            )}
+          </div>
+        </section>
+        {/* Haut de la colonne de droite : bouton « Nouvelle actualité », titre et résumé */}
+        <div className="space-y-sm md:col-start-2 md:row-start-1 md:self-end">
           {isAdmin && (
             <button
               type="button"
@@ -238,34 +334,46 @@ function NewsPage() {
               <Icon name="add" /> NOUVELLE ACTUALITÉ
             </button>
           )}
-          {/* Indicateurs */}
-          <section aria-labelledby="indicateurs-titre" className="space-y-sm">
-            <div className="flex flex-wrap items-baseline gap-x-md gap-y-xs">
+          <div className="space-y-xs">
+            <div className="flex items-center justify-between gap-sm">
               <h2 id="indicateurs-titre" className="font-headline-sm text-headline-sm text-primary">
                 Indicateurs
               </h2>
               {metrics.data && summary.atteint + summary.proche + summary.retard > 0 && (
-                <>
-                  <p
-                    className="font-label-md text-label-md text-on-surface-variant"
-                    aria-live="polite"
-                  >
-                    {(["atteint", "proche", "retard"] as MetricStatus[])
-                      .filter((k) => summary[k] > 0)
-                      .map((k) => `${summary[k]} ${STATUS_LABELS[k].toLowerCase()}`)
-                      .join(" · ")}
-                  </p>
-                  <label className="flex items-center gap-xs font-label-sm text-label-sm">
-                    <input
-                      type="checkbox"
-                      checked={lateFirst}
-                      onChange={(e) => setLateFirst(e.target.checked)}
-                    />
-                    En retard d'abord
-                  </label>
-                </>
+                <label className="flex items-center gap-xs font-label-sm text-label-sm">
+                  <input
+                    type="checkbox"
+                    checked={lateFirst}
+                    onChange={(e) => setLateFirst(e.target.checked)}
+                  />
+                  En retard d'abord
+                </label>
               )}
             </div>
+            {metrics.data && summary.atteint + summary.proche + summary.retard > 0 && (
+              <p className="flex flex-wrap gap-xs" aria-live="polite">
+                {(["atteint", "proche", "retard"] as MetricStatus[])
+                  .filter((k) => summary[k] > 0)
+                  .map((k) => (
+                    <span
+                      key={k}
+                      className={`rounded px-xs py-0.5 text-[11px] font-label-sm ${STATUS_STYLE[k]}`}
+                    >
+                      {summary[k]} {STATUS_LABELS[k].toLowerCase()}
+                    </span>
+                  ))}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Colonne de droite : tuiles, alignées sur « À la une » */}
+        <aside
+          aria-labelledby="indicateurs-titre"
+          className="space-y-sm md:col-start-2 md:row-start-2 md:sticky md:top-sm md:self-start"
+        >
+          {/* Indicateurs */}
+          <section aria-labelledby="indicateurs-titre" className="space-y-sm">
             {metrics.isLoading && (
               <div className="h-24 rounded bg-surface-container animate-pulse" />
             )}
@@ -294,105 +402,7 @@ function NewsPage() {
           </section>
         </aside>
 
-        <div className="min-w-0 space-y-md md:col-start-1 md:row-start-1">
-          {/* Recherche et filtres */}
-          <section aria-label="Recherche" className="space-y-xs">
-            <div className="flex flex-col lg:flex-row gap-sm lg:items-end">
-              <div className="flex-1 space-y-xs">
-                <label
-                  htmlFor="news-search"
-                  className="font-label-md text-label-md text-on-surface-variant block"
-                >
-                  RECHERCHER
-                </label>
-                <input
-                  id="news-search"
-                  type="search"
-                  value={filters.query}
-                  onChange={(e) => set({ query: e.target.value })}
-                  placeholder="Titre, chapô ou contenu…"
-                  className={`${select} w-full`}
-                />
-              </div>
-              <select
-                aria-label="Département"
-                className={select}
-                value={filters.department}
-                onChange={(e) => set({ department: e.target.value })}
-              >
-                <option value="">Tous les départements</option>
-                {DEPARTMENTS.map((d) => (
-                  <option key={d}>{d}</option>
-                ))}
-              </select>
-              <select
-                aria-label="Importance"
-                className={select}
-                value={filters.level}
-                onChange={(e) => set({ level: e.target.value })}
-              >
-                <option value="">Toute importance</option>
-                {LEVELS.map((l) => (
-                  <option key={l} value={l}>
-                    {LEVEL_LABELS[l]}
-                  </option>
-                ))}
-              </select>
-              <select
-                aria-label="Période"
-                className={select}
-                value={filters.period}
-                onChange={(e) => set({ period: e.target.value })}
-              >
-                {PERIODS.map((p) => (
-                  <option key={p.value} value={p.value}>
-                    {p.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex flex-wrap items-center gap-md">
-              <label className="flex items-center gap-xs font-body-sm">
-                <input
-                  type="checkbox"
-                  checked={filters.favorites}
-                  onChange={(e) => set({ favorites: e.target.checked })}
-                />
-                Mes favoris
-              </label>
-              <label className="flex items-center gap-xs font-body-sm">
-                <input
-                  type="checkbox"
-                  checked={filters.unread}
-                  onChange={(e) => set({ unread: e.target.checked })}
-                />
-                Non lues{unreadCount > 0 ? ` (${unreadCount})` : ""}
-              </label>
-              {filters.query.trim().length > 0 && filters.query.trim().length < MIN_QUERY && (
-                <span className="font-label-sm text-label-sm text-on-surface-variant">
-                  Saisis au moins {MIN_QUERY} caractères pour lancer la recherche.
-                </span>
-              )}
-              {searching && (
-                <>
-                  <span
-                    className="font-label-sm text-label-sm text-on-surface-variant"
-                    aria-live="polite"
-                  >
-                    {results.length} résultat{results.length > 1 ? "s" : ""}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => set(noFilters)}
-                    className="font-label-sm text-label-sm text-primary underline"
-                  >
-                    Effacer les filtres
-                  </button>
-                </>
-              )}
-            </div>
-          </section>
-
+        <div className="min-w-0 space-y-md md:col-start-1 md:row-start-2">
           {news.isLoading && <div className="h-40 rounded bg-surface-container animate-pulse" />}
           {news.isError && (
             <p className="text-body-sm text-error">Les actualités sont indisponibles.</p>
