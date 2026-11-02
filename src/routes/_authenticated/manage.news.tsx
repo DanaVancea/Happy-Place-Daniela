@@ -45,7 +45,7 @@ const newsStatusLabels: Record<string, string> = {
   publiée: "Publiée",
 };
 
-const empty: NewsInput = { title: "", body: "", author: "Direction Recrutement", status: "brouillon" };
+const empty: NewsInput = { title: "", body: "", author: "RH", status: "brouillon" };
 
 function ManageNews() {
   const qc = useQueryClient();
