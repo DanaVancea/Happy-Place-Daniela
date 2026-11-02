@@ -7,7 +7,7 @@ import { signOut } from "@/lib/auth";
 import { fetchSubmissions } from "@/lib/dashboard";
 
 const TABS = [
-  { to: "/", label: "Actualités", exact: true },
+  { to: "/", label: "Actualités et indicateurs", exact: true },
   { to: "/idees", label: "Idées", exact: false },
   { to: "/points-bloquants", label: "Points bloquants", exact: false },
   { to: "/trombi", label: "Trombi", exact: false },

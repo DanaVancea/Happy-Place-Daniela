@@ -185,6 +185,27 @@ export function findBlockedWord(text: string, words: string[]): string | null {
   return null;
 }
 
+/** Relevés des 12 derniers mois de tous les indicateurs, regroupés par clé (pour les mini-courbes). */
+export async function fetchAllMetricHistory(): Promise<Record<string, MetricPoint[]>> {
+  const since = new Date();
+  since.setMonth(since.getMonth() - 12);
+  const { data, error } = await db
+    .from("metrics_history")
+    .select("metric_key,value,recorded_at,is_demo")
+    .gte("recorded_at", since.toISOString())
+    .order("recorded_at");
+  if (error) throw error;
+  const out: Record<string, MetricPoint[]> = {};
+  for (const r of data ?? []) {
+    (out[r.metric_key] ??= []).push({
+      value: Number(r.value),
+      recorded_at: r.recorded_at,
+      is_demo: r.is_demo,
+    });
+  }
+  return out;
+}
+
 /* ---------- Édition (Admin) ---------- */
 
 export type NewsEdit = {
