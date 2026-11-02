@@ -146,18 +146,18 @@ export async function fetchReadCounts(): Promise<Record<string, number>> {
 
 /* ---------- Indicateurs : historique ---------- */
 
-export type MetricPoint = { value: number; recorded_at: string };
+export type MetricPoint = { value: number; recorded_at: string; is_demo?: boolean };
 export async function fetchMetricHistory(key: string): Promise<MetricPoint[]> {
   const since = new Date();
   since.setMonth(since.getMonth() - 12);
   const { data, error } = await db
     .from("metrics_history")
-    .select("value,recorded_at")
+    .select("value,recorded_at,is_demo")
     .eq("metric_key", key)
     .gte("recorded_at", since.toISOString())
     .order("recorded_at");
   if (error) throw error;
-  return (data ?? []).map((r) => ({ value: Number(r.value), recorded_at: r.recorded_at }));
+  return (data ?? []).map((r) => ({ value: Number(r.value), recorded_at: r.recorded_at, is_demo: r.is_demo }));
 }
 
 /* ---------- Édition (Admin) ---------- */

@@ -226,6 +226,9 @@ export type Database = {
           unit: string | null
           updated_at: string
           value: number
+          target: number | null
+          direction: string
+          definition: string | null
         }
         Insert: {
           key: string
@@ -233,6 +236,9 @@ export type Database = {
           unit?: string | null
           updated_at?: string
           value: number
+          target?: number | null
+          direction?: string
+          definition?: string | null
         }
         Update: {
           key?: string
@@ -240,6 +246,9 @@ export type Database = {
           unit?: string | null
           updated_at?: string
           value?: number
+          target?: number | null
+          direction?: string
+          definition?: string | null
         }
         Relationships: []
       }
@@ -249,18 +258,21 @@ export type Database = {
           metric_key: string
           recorded_at: string
           value: number
+          is_demo: boolean
         }
         Insert: {
           id?: string
           metric_key: string
           recorded_at?: string
           value: number
+          is_demo?: boolean
         }
         Update: {
           id?: string
           metric_key?: string
           recorded_at?: string
           value?: number
+          is_demo?: boolean
         }
         Relationships: []
       }
@@ -499,6 +511,9 @@ export type Database = {
           unit: string | null
           updated_at: string | null
           value: number | null
+          target: number | null
+          direction: string | null
+          definition: string | null
         }
         Relationships: []
       }

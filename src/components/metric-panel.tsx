@@ -6,7 +6,10 @@ import { Icon } from "@/components/icon";
 import {
   deltaText,
   formatMetricValue,
+  STATUS_LABELS,
+  targetProgress,
   TREND_LABELS,
+  trendIsGood,
   updateMetric,
   type Metric,
 } from "@/lib/dashboard";
@@ -19,6 +22,56 @@ export function metricLabel(m: Metric) {
   if (m.key === "active_users") return "Missions actives";
   return m.label;
 }
+
+const STATUS_STYLE = {
+  atteint: "bg-secondary-fixed text-primary",
+  proche: "border border-outline text-primary",
+  retard: "bg-error-container text-error",
+} as const;
+
+/** Cible, écart, barre d'avancement et statut d'un indicateur. */
+function TargetLine({ m, large }: { m: Metric; large?: boolean }) {
+  const p = targetProgress(m);
+  if (!p) return null;
+  const gap = formatMetricValue(Math.abs(p.gap), m.unit === "%" ? null : m.unit);
+  const gapText = p.reached
+    ? p.gap === 0
+      ? "cible atteinte"
+      : `${gap}${m.unit === "%" ? " pts" : ""} au-delà`
+    : `${gap}${m.unit === "%" ? " pts" : ""} ${m.direction === "baisse" ? "à gagner" : "restants"}`;
+  return (
+    <div className="space-y-0.5">
+      <p
+        className={`${large ? "text-body-sm" : "text-[11px]"} font-label-sm text-on-surface-variant`}
+      >
+        Cible :{" "}
+        <span className="text-primary font-bold">{formatMetricValue(m.target!, m.unit)}</span>
+        {" · "}
+        {gapText}
+      </p>
+      <div
+        className="h-1.5 rounded bg-surface-container-high"
+        role="progressbar"
+        aria-label="Avancement vers la cible"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.round(p.ratio * 100)}
+      >
+        <div className="h-full rounded bg-primary" style={{ width: `${p.ratio * 100}%` }} />
+      </div>
+      <span
+        className={`inline-block rounded px-xs py-0.5 text-[11px] font-label-sm ${STATUS_STYLE[p.status]}`}
+      >
+        {STATUS_LABELS[p.status]}
+      </span>
+    </div>
+  );
+}
+
+const trendClass = (m: Metric) => {
+  const good = trendIsGood(m);
+  return good === false ? "text-error" : "text-on-surface-variant";
+};
 
 const daysSince = (iso?: string | null) =>
   iso ? Math.floor((Date.now() - new Date(iso).getTime()) / 864e5) : null;
@@ -42,10 +95,11 @@ export function MetricTile({ metric: m, onOpen }: { metric: Metric; onOpen: (m: 
       <p className="font-display text-[28px] leading-tight text-primary">
         {formatMetricValue(m.value, m.unit)}
       </p>
-      <p className="text-[11px] text-on-surface-variant font-label-sm">
+      <p className={`text-[11px] font-label-sm ${trendClass(m)}`}>
         {TREND_LABELS[m.trend]}
         {deltaText(m) && ` · ${deltaText(m)}`}
       </p>
+      <TargetLine m={m} />
       {m.updated_at && (
         <p
           className={`text-[11px] font-label-sm ${stale ? "text-error" : "text-on-surface-variant"}`}
@@ -60,7 +114,15 @@ export function MetricTile({ metric: m, onOpen }: { metric: Metric; onOpen: (m: 
 }
 
 /** Courbe des 12 derniers mois (relevés réels uniquement, jamais de zéro inventé). */
-function Chart({ points, unit }: { points: MetricPoint[]; unit: string | null }) {
+function Chart({
+  points,
+  unit,
+  target,
+}: {
+  points: MetricPoint[];
+  unit: string | null;
+  target?: number | null;
+}) {
   const [active, setActive] = useState<number | null>(null);
   const W = 520;
   const H = 220;
@@ -69,7 +131,7 @@ function Chart({ points, unit }: { points: MetricPoint[]; unit: string | null })
   const start = new Date();
   start.setMonth(start.getMonth() - 12);
   const t0 = start.getTime();
-  const vals = points.map((p) => p.value);
+  const vals = points.map((p) => p.value).concat(target != null ? [Number(target)] : []);
   const lo = Math.min(...vals);
   const hi = Math.max(...vals);
   const span = hi - lo || Math.max(1, Math.abs(hi) * 0.1);
@@ -127,6 +189,28 @@ function Chart({ points, unit }: { points: MetricPoint[]; unit: string | null })
             {m.d.toLocaleDateString("fr-FR", { month: "short" })}
           </text>
         ))}
+        {target != null && (
+          <g>
+            <line
+              x1={pad.l}
+              x2={W - pad.r}
+              y1={y(Number(target))}
+              y2={y(Number(target))}
+              stroke="var(--on-surface-variant)"
+              strokeWidth="1.5"
+              strokeDasharray="5 4"
+            />
+            <text
+              x={W - pad.r}
+              y={y(Number(target)) - 5}
+              textAnchor="end"
+              fontSize="11"
+              fill="var(--on-surface-variant)"
+            >
+              Cible {formatMetricValue(Number(target), unit)}
+            </text>
+          </g>
+        )}
         {points.length > 1 && (
           <polyline
             fill="none"
@@ -191,6 +275,27 @@ export function MetricPanel({
     onError: (e: unknown) => toast.error((e as Error).message),
   });
   const points = history.data ?? [];
+  const hasDemo = points.some((p) => p.is_demo);
+  // Comparaisons : relevé précédent et relevé d'il y a environ 12 mois
+  const compare: { label: string; value: number; delta: string; cls: string }[] = [];
+  if (m && points.length > 1) {
+    const cur = Number(m.value);
+    const add = (label: string, p: MetricPoint | undefined) => {
+      if (!p) return;
+      const d = cur - p.value;
+      const good = d === 0 ? null : (m.direction === "baisse") === d < 0;
+      const abs = Math.abs(d).toLocaleString("fr-FR", { maximumFractionDigits: 1 });
+      const suffix = m.unit === "%" ? " pts" : m.unit ? ` ${m.unit.trim()}` : "";
+      compare.push({
+        label,
+        value: p.value,
+        delta: d === 0 ? "Stable" : `${d > 0 ? "+" : "−"}${abs}${suffix}`,
+        cls: good === false ? "text-error" : "text-on-surface-variant",
+      });
+    };
+    add("Mois précédent", points[points.length - 2]);
+    add("Il y a 12 mois", points[0]);
+  }
   return (
     <DialogPrimitive.Root open={!!m} onOpenChange={(o) => !o && onClose()}>
       <DialogPrimitive.Portal>
@@ -220,11 +325,37 @@ export function MetricPanel({
                 <p className="font-display text-[40px] leading-tight text-primary">
                   {formatMetricValue(m.value, m.unit)}
                 </p>
-                <p className="font-label-sm text-label-sm text-on-surface-variant">
+                <p className={`font-label-sm text-label-sm ${trendClass(m)}`}>
                   {TREND_LABELS[m.trend]}
                   {deltaText(m) && ` · ${deltaText(m)}`}
                 </p>
+                <div className="mt-xs">
+                  <TargetLine m={m} large />
+                </div>
               </div>
+              {m.definition && (
+                <p className="text-body-sm text-on-surface border-l-2 border-accent-bar pl-sm">
+                  {m.definition}
+                </p>
+              )}
+              {compare.length > 0 && (
+                <dl className="grid grid-cols-2 gap-sm">
+                  {compare.map((c) => (
+                    <div
+                      key={c.label}
+                      className="p-sm bg-card border border-outline-variant rounded"
+                    >
+                      <dt className="font-label-sm text-[11px] text-on-surface-variant uppercase">
+                        {c.label}
+                      </dt>
+                      <dd className="font-label-md text-label-md text-primary">
+                        {formatMetricValue(c.value, m.unit)}
+                      </dd>
+                      <dd className={`text-[11px] font-label-sm ${c.cls}`}>{c.delta}</dd>
+                    </div>
+                  ))}
+                </dl>
+              )}
               <h3 className="font-label-md text-label-md text-on-surface-variant">
                 12 DERNIERS MOIS
               </h3>
@@ -239,7 +370,12 @@ export function MetricPanel({
                   Aucun relevé sur les 12 derniers mois.
                 </p>
               )}
-              {points.length > 0 && <Chart points={points} unit={m.unit} />}
+              {hasDemo && (
+                <p className="text-body-sm bg-tertiary-fixed text-primary rounded p-xs">
+                  Données de démonstration : l'historique est fictif.
+                </p>
+              )}
+              {points.length > 0 && <Chart points={points} unit={m.unit} target={m.target} />}
               {points.length > 0 && (
                 <>
                   <p className="text-body-sm text-on-surface-variant">
