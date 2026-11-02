@@ -276,6 +276,21 @@ export type Database = {
         }
         Relationships: []
       }
+      blocked_words: {
+        Row: {
+          word: string
+          created_at: string
+        }
+        Insert: {
+          word: string
+          created_at?: string
+        }
+        Update: {
+          word?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
       news_favorites: {
         Row: {
           news_id: string
