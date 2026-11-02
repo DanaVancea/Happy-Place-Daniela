@@ -67,7 +67,35 @@ export type Metric = {
   previous_value: number | null;
   delta: number | string | null;
   updated_at?: string | null;
+  target?: number | null;
+  direction?: "hausse" | "baisse" | null;
+  definition?: string | null;
 };
+
+export type MetricStatus = "atteint" | "proche" | "retard";
+export const STATUS_LABELS: Record<MetricStatus, string> = {
+  atteint: "Atteint",
+  proche: "Proche de la cible",
+  retard: "En retard",
+};
+
+/** Avancement vers la cible (0 à 1+) et statut ; null si aucune cible. */
+export function targetProgress(m: Pick<Metric, "value" | "target" | "direction">) {
+  if (m.target == null || !Number(m.target)) return null;
+  const v = Number(m.value);
+  const t = Number(m.target);
+  const lowerIsBetter = m.direction === "baisse";
+  const ratio = lowerIsBetter ? t / v : v / t;
+  const reached = lowerIsBetter ? v <= t : v >= t;
+  const status: MetricStatus = reached ? "atteint" : ratio >= 0.9 ? "proche" : "retard";
+  return { ratio: Math.max(0, Math.min(1, ratio)), status, gap: v - t, reached };
+}
+
+/** Une évolution est « bonne » selon le sens de l'indicateur (ex. un délai qui baisse). */
+export function trendIsGood(m: Pick<Metric, "trend" | "direction">): boolean | null {
+  if (m.trend === "stable") return null;
+  return (m.direction === "baisse") === (m.trend === "baisse");
+}
 
 export const TREND_LABELS: Record<Metric["trend"], string> = {
   hausse: "▲ En hausse",
