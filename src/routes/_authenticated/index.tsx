@@ -222,10 +222,10 @@ function NewsPage() {
         </section>
       )}
 
-      <div className="grid gap-md md:grid-cols-[minmax(0,1fr)_minmax(20rem,30%)] md:items-start">
-        <div className="min-w-0 space-y-md md:col-start-1 md:row-start-1 md:self-end">
-          <section aria-label="Recherche" className="space-y-xs">
-            <div className="flex flex-col lg:flex-row gap-sm lg:items-end">
+      <div className="grid gap-x-md gap-y-sm md:grid-cols-[minmax(0,1fr)_minmax(20rem,30%)] md:items-start">
+        <div className="contents">
+          <section aria-label="Recherche" className="contents">
+            <div className="flex min-w-0 flex-col lg:flex-row gap-sm lg:items-end md:col-start-1 md:row-start-1 md:self-end">
               <div className="flex-1 space-y-xs">
                 <label
                   htmlFor="news-search"
@@ -279,7 +279,7 @@ function NewsPage() {
                 ))}
               </select>
             </div>
-            <div className="flex flex-wrap items-center gap-md">
+            <div className="flex min-w-0 flex-wrap items-center gap-md md:col-start-1 md:row-start-2">
               <label className="flex items-center gap-xs font-body-sm">
                 <input
                   type="checkbox"
@@ -322,26 +322,29 @@ function NewsPage() {
           </section>
           <h2
             id={searching ? "resultats-titre" : "une-titre"}
-            className="font-headline-sm text-headline-sm text-primary"
+            className="font-headline-lg text-headline-lg font-bold text-primary max-md:order-1 md:col-start-1 md:row-start-3 md:self-start"
           >
             {searching ? "Résultats" : "À la une"}
           </h2>
         </div>
         {/* Haut de la colonne de droite : bouton « Nouvelle actualité », titre et résumé */}
-        <div className="space-y-sm md:col-start-2 md:row-start-1 md:self-end">
+        <div className="contents">
           {isAdmin && (
             <button
               type="button"
               onClick={() => setEditor({ news: null })}
               disabled={!!editor && !editor.news}
-              className="flex w-full items-center justify-center gap-xs rounded bg-primary px-md py-xs text-on-primary font-label-md text-label-md disabled:opacity-50"
+              className="flex w-full items-center justify-center gap-xs rounded bg-primary px-md py-xs text-on-primary font-label-md text-label-md disabled:opacity-50 md:col-start-2 md:row-start-1 md:min-h-[3rem] md:self-end"
             >
               <Icon name="add" /> NOUVELLE ACTUALITÉ
             </button>
           )}
-          <div className="space-y-xs">
+          <div className="space-y-xs md:col-start-2 md:row-start-3">
             <div className="flex items-center justify-between gap-sm">
-              <h2 id="indicateurs-titre" className="font-headline-sm text-headline-sm text-primary">
+              <h2
+                id="indicateurs-titre"
+                className="font-headline-lg text-headline-lg font-bold text-primary"
+              >
                 Indicateurs
               </h2>
               {metrics.data && summary.atteint + summary.proche + summary.retard > 0 && (
@@ -351,7 +354,7 @@ function NewsPage() {
                     checked={lateFirst}
                     onChange={(e) => setLateFirst(e.target.checked)}
                   />
-                  En retard d'abord
+                  À améliorer d'abord
                 </label>
               )}
             </div>
@@ -375,7 +378,7 @@ function NewsPage() {
         {/* Colonne de droite : tuiles, alignées sur « À la une » */}
         <aside
           aria-labelledby="indicateurs-titre"
-          className="space-y-sm md:col-start-2 md:row-start-2 md:sticky md:top-sm md:self-start"
+          className="space-y-sm md:col-start-2 md:row-start-4 md:sticky md:top-sm md:self-start"
         >
           {/* Indicateurs */}
           <section aria-labelledby="indicateurs-titre" className="space-y-sm">
@@ -393,7 +396,7 @@ function NewsPage() {
             >
               <div className="grid grid-cols-2 gap-sm">
                 {sortedMetrics.map((m) => (
-                  <div key={m.key} className="snap-start">
+                  <div key={m.key} className="flex snap-start">
                     <MetricTile metric={m} points={history.data?.[m.key]} onOpen={setMetric} />
                   </div>
                 ))}
@@ -407,7 +410,7 @@ function NewsPage() {
           </section>
         </aside>
 
-        <div className="min-w-0 space-y-md md:col-start-1 md:row-start-2">
+        <div className="min-w-0 space-y-md max-md:order-1 md:col-start-1 md:row-start-4">
           {news.isLoading && <div className="h-40 rounded bg-surface-container animate-pulse" />}
           {news.isError && (
             <p className="text-body-sm text-error">Les actualités sont indisponibles.</p>

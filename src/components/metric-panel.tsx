@@ -24,7 +24,7 @@ export function metricLabel(m: Metric) {
 }
 
 export const STATUS_STYLE = {
-  atteint: "bg-secondary-fixed text-primary",
+  atteint: "bg-success text-on-primary",
   proche: "border border-outline text-primary",
   retard: "bg-error-container text-error",
 } as const;
@@ -52,7 +52,7 @@ function TargetLine({ m, large }: { m: Metric; large?: boolean }) {
         <div className="h-full rounded bg-primary" style={{ width: `${p.ratio * 100}%` }} />
       </div>
       <span
-        className={`inline-block rounded px-xs py-0.5 text-[11px] font-label-sm ${STATUS_STYLE[p.status]}`}
+        className={`inline-block whitespace-nowrap rounded px-xs py-0.5 text-[11px] font-label-sm ${STATUS_STYLE[p.status]}`}
       >
         {STATUS_LABELS[p.status]}
       </span>
@@ -118,7 +118,7 @@ export function MetricTile({
       type="button"
       onClick={() => onOpen(m)}
       aria-haspopup="dialog"
-      className="text-left p-sm bg-card border border-outline-variant rounded min-w-0 hover:bg-surface-container focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      className="w-full text-left p-sm bg-card border border-outline-variant rounded min-w-0 hover:bg-surface-container focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
     >
       <p className="font-label-sm text-label-sm text-on-surface-variant uppercase wrap-anywhere">
         {metricLabel(m)}
