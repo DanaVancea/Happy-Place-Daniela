@@ -2,6 +2,14 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -30,6 +38,8 @@ type Person = {
   joined_at: string;
 };
 
+type TeamManager = { first_name: string; last_name: string; team: string };
+
 const NEW_DAYS = 90;
 const ROLE_LABELS: Record<Person["role"], string> = {
   admin: "Admin",
@@ -38,7 +48,18 @@ const ROLE_LABELS: Record<Person["role"], string> = {
 };
 
 const normalize = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+const frMonthYear = (iso: string) => {
+  const t = new Date(iso).toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
+  return t.charAt(0).toUpperCase() + t.slice(1);
+};
 const isNew = (p: Person) => Date.now() - new Date(p.joined_at).getTime() < NEW_DAYS * 864e5;
+
+async function fetchTeamManagers(): Promise<TeamManager[]> {
+  // Fonction ajoutée après les types générés : client non typé.
+  const { data, error } = await (supabase as unknown as SupabaseClient).rpc("team_managers");
+  if (error) throw error;
+  return (data ?? []) as TeamManager[];
+}
 
 async function fetchDirectory(): Promise<Person[]> {
   const { data, error } = await supabase.rpc("team_directory");
@@ -51,6 +72,12 @@ function DirectoryPage() {
   const [query, setQuery] = useState("");
   const [team, setTeam] = useState("");
   const [onlyNew, setOnlyNew] = useState(false);
+  const managers = useQuery({
+    queryKey: ["team_managers"],
+    queryFn: fetchTeamManagers,
+    retry: false,
+  });
+  const [selected, setSelected] = useState<Person | null>(null);
   const directory = useQuery({
     queryKey: ["team_directory"],
     queryFn: fetchDirectory,
@@ -150,35 +177,129 @@ function DirectoryPage() {
         </p>
       )}
       <ul className="grid gap-sm sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {people.map((p) => (
-          <li
-            key={`${p.first_name}-${p.last_name}-${p.team}`}
-            className="flex items-center gap-sm rounded-lg border border-outline-variant bg-surface-container-lowest p-sm min-w-0"
-          >
-            <div
-              aria-hidden="true"
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-secondary-fixed font-headline-sm text-headline-sm text-primary"
+        {people.map((p, i) => (
+          <li key={`${i}-${p.first_name}-${p.last_name}-${p.team}`} className="min-w-0">
+            <button
+              type="button"
+              onClick={() => setSelected(p)}
+              className="flex w-full items-center gap-sm rounded-lg border border-outline-variant bg-surface-container-lowest p-sm min-w-0 text-left hover:border-primary focus-visible:border-primary focus-visible:outline-none"
             >
-              {p.first_name[0]}
-              {p.last_name[0]}
-            </div>
-            <div className="min-w-0">
-              <p className="font-body-md font-bold text-primary wrap-anywhere">
-                {p.first_name} {p.last_name}
-                {isNew(p) && (
-                  <span className="ml-xs rounded bg-tertiary-fixed px-xs font-label-sm text-label-sm text-on-tertiary-fixed">
-                    NOUVEAU·ELLE
-                  </span>
-                )}
-              </p>
-              <p className="font-label-sm text-label-sm text-on-surface-variant wrap-anywhere">
-                {p.team ?? "Sans équipe"} · {ROLE_LABELS[p.role]}
-              </p>
-            </div>
+              <div
+                aria-hidden="true"
+                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-secondary-fixed font-headline-sm text-headline-sm text-primary"
+              >
+                {p.first_name[0]}
+                {p.last_name[0]}
+              </div>
+              <div className="min-w-0">
+                <p className="font-body-md font-bold text-primary wrap-anywhere">
+                  {p.first_name} {p.last_name}
+                  {isNew(p) && (
+                    <span className="ml-xs rounded bg-tertiary-fixed px-xs font-label-sm text-label-sm text-on-tertiary-fixed">
+                      NOUVEAU·ELLE
+                    </span>
+                  )}
+                </p>
+                <p className="font-label-sm text-label-sm text-on-surface-variant wrap-anywhere">
+                  {p.team ?? "Sans équipe"} · {ROLE_LABELS[p.role]}
+                </p>
+              </div>
+            </button>
           </li>
         ))}
       </ul>
+      <PersonDialog
+        person={selected}
+        directory={directory.data ?? []}
+        managers={managers.data}
+        onClose={() => setSelected(null)}
+      />
     </AppShell>
+  );
+}
+
+function PersonDialog({
+  person,
+  directory,
+  managers: allManagers,
+  onClose,
+}: {
+  person: Person | null;
+  directory: Person[];
+  managers: TeamManager[] | undefined;
+  onClose: () => void;
+}) {
+  const name = (p: Person) => `${p.first_name} ${p.last_name}`;
+  const same = (a: Person, b: Person) =>
+    a.first_name === b.first_name && a.last_name === b.last_name && a.team === b.team;
+  const managers = person?.team
+    ? (allManagers ?? []).filter(
+        (m) =>
+          m.team === person.team &&
+          !(m.first_name === person.first_name && m.last_name === person.last_name),
+      )
+    : [];
+  const mates = person?.team
+    ? directory.filter((p) => !same(p, person) && p.team === person.team)
+    : [];
+  return (
+    <Dialog open={!!person} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="w-[calc(100%-2rem)] max-w-[32rem] max-h-[85vh] overflow-y-auto">
+        {person && (
+          <>
+            <DialogHeader>
+              <DialogTitle>{name(person)}</DialogTitle>
+              <DialogDescription>
+                {person.team ?? "Sans équipe"} · {ROLE_LABELS[person.role]}
+              </DialogDescription>
+            </DialogHeader>
+            <dl className="space-y-sm text-body-sm">
+              <div>
+                <dt className="font-label-md text-label-md text-on-surface-variant">
+                  DANS L'ENTREPRISE DEPUIS
+                </dt>
+                <dd className="font-body-md">{frMonthYear(person.joined_at)}</dd>
+              </div>
+              {person.role !== "admin" && (
+                <div>
+                  <dt className="font-label-md text-label-md text-on-surface-variant">
+                    MANAGER{managers.length > 1 ? "S" : ""}
+                  </dt>
+                  <dd className="font-body-md">
+                    {managers.length
+                      ? managers.map((m) => `${m.first_name} ${m.last_name}`).join(", ")
+                      : "Aucun manager renseigné"}
+                  </dd>
+                </div>
+              )}
+              <div>
+                <dt className="font-label-md text-label-md text-on-surface-variant">
+                  AUTRES MEMBRES DE L'ÉQUIPE ({mates.length})
+                </dt>
+                <dd>
+                  {mates.length ? (
+                    <ul className="mt-xs max-h-48 space-y-xs overflow-y-auto">
+                      {mates.map((m, i) => (
+                        <li key={`${i}-${name(m)}`} className="font-body-md">
+                          {name(m)}{" "}
+                          <span className="font-label-sm text-label-sm text-on-surface-variant">
+                            · {ROLE_LABELS[m.role]} · depuis {frMonthYear(m.joined_at)}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <span className="font-body-md italic text-on-surface-variant">
+                      Personne d'autre dans cette équipe
+                    </span>
+                  )}
+                </dd>
+              </div>
+            </dl>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
 
