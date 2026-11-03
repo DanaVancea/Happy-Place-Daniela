@@ -5,6 +5,7 @@ import { BrandHeader } from "@/components/brand-header";
 import { Icon } from "@/components/icon";
 import { signOut } from "@/lib/auth";
 import { canModerate, fetchIdeas, fetchMyTeams } from "@/lib/ideas";
+import { fetchDepartureBanner } from "@/lib/users-admin";
 
 const TABS = [
   { to: "/", label: "Actualités et indicateurs", exact: true },
@@ -12,6 +13,8 @@ const TABS = [
   { to: "/points-bloquants", label: "Points bloquants", exact: false },
   { to: "/trombi", label: "Trombi", exact: false },
 ] as const;
+
+const ADMIN_TAB = { to: "/utilisateurs", label: "Gestion des utilisateurs", exact: false } as const;
 
 const ROLE_LABELS: Record<string, string> = {
   admin: "ADMIN",
@@ -50,6 +53,14 @@ export function AppShell({
     enabled: canReview && !!normEmail,
     retry: false,
   });
+  const isAdmin = role === "admin";
+  const banner = useQuery({
+    queryKey: ["admin_departures_banner"],
+    queryFn: fetchDepartureBanner,
+    enabled: isAdmin,
+    retry: false,
+  });
+  const tabs = isAdmin ? [...TABS, ADMIN_TAB] : TABS;
   const pendingCount = canReview
     ? (ideas.data ?? []).filter(
         (i) =>
@@ -66,7 +77,7 @@ export function AppShell({
         className="border-b border-outline-variant bg-surface-container-lowest"
       >
         <ul className="mx-auto flex w-full max-w-interface gap-xs overflow-x-auto px-sm md:px-md">
-          {TABS.map((t) => (
+          {tabs.map((t) => (
             <li key={t.to}>
               <Link
                 to={t.to}
@@ -88,6 +99,37 @@ export function AppShell({
           ))}
         </ul>
       </nav>
+      {isAdmin &&
+        banner.data &&
+        (banner.data.week > 0 || banner.data.overdue > 0 || banner.data.requests > 0) && (
+          <div
+            role="status"
+            className="border-b border-outline-variant bg-tertiary-fixed text-on-tertiary-fixed"
+          >
+            <p className="mx-auto flex w-full max-w-interface flex-wrap items-center gap-x-sm gap-y-xs px-sm py-xs md:px-md font-body-sm">
+              <Icon name="event_busy" />
+              <span>
+                {[
+                  banner.data.week > 0 &&
+                    `${banner.data.week} collaborateur${banner.data.week > 1 ? "s" : ""} ${banner.data.week > 1 ? "partent" : "part"} cette semaine`,
+                  banner.data.overdue > 0 &&
+                    `${banner.data.overdue} départ${banner.data.overdue > 1 ? "s" : ""} dépassé${banner.data.overdue > 1 ? "s" : ""} à supprimer`,
+                  banner.data.requests > 0 &&
+                    `${banner.data.requests} demande${banner.data.requests > 1 ? "s" : ""} de départ à traiter`,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </span>
+              <Link
+                to="/utilisateurs"
+                search={{ vue: "departs" }}
+                className="font-bold underline underline-offset-2"
+              >
+                Voir la liste
+              </Link>
+            </p>
+          </div>
+        )}
       <main className="flex-grow w-full max-w-interface mx-auto p-sm md:p-md space-y-md">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-sm mb-md">
           <div className="space-y-xs">

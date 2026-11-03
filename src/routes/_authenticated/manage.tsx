@@ -34,7 +34,6 @@ const tabs = [
   { to: "/manage/submissions", label: "SOUMISSIONS" },
   { to: "/manage/blockers", label: "POINTS BLOQUANTS" },
   { to: "/manage/metrics", label: "INDICATEURS" },
-  { to: "/manage/users", label: "UTILISATEURS AUTORISÉS" },
 ] as const;
 
 function ManageLayout() {
