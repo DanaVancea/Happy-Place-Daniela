@@ -47,7 +47,15 @@ const ACTION_LABEL: Record<ModerationAction, string> = {
   valider: "VALIDER",
   debat: "SOUMETTRE EN DÉBAT",
   remonter: "REMONTER À LA SOCIÉTÉ",
-  supprimer: "SUPPRIMER",
+  supprimer: "REFUSER",
+};
+
+// Une couleur par action, avec les teintes du design system
+const ACTION_STYLE: Record<ModerationAction, string> = {
+  valider: "bg-success text-on-primary",
+  debat: "bg-tertiary-fixed text-on-tertiary-fixed",
+  remonter: "bg-primary text-on-primary",
+  supprimer: "bg-error text-on-primary",
 };
 
 const STATUS_STYLE: Record<IdeaStatus, string> = {
@@ -157,7 +165,7 @@ function IdeasPage() {
     onSuccess: (_d, v) => {
       const done: Record<ModerationAction, string> = {
         valider: "Idée validée",
-        supprimer: "Idée supprimée",
+        supprimer: "Idée refusée",
         debat: "Idée soumise en débat",
         remonter: "Idée remontée à la société",
       };
@@ -284,11 +292,7 @@ function IdeasPage() {
                         key={a}
                         disabled={moderate.isPending}
                         onClick={() => act(i, a)}
-                        className={`flex-1 min-w-[8rem] rounded py-1 font-label-sm text-label-sm transition-colors disabled:opacity-60 ${
-                          a === "valider"
-                            ? "bg-primary text-on-primary hover:opacity-90"
-                            : "border border-primary text-primary hover:bg-surface-container"
-                        }`}
+                        className={`flex-1 min-w-[8rem] rounded py-1 font-label-sm text-label-sm transition-opacity hover:opacity-90 disabled:opacity-60 ${ACTION_STYLE[a]}`}
                       >
                         {ACTION_LABEL[a]}
                       </button>
@@ -444,7 +448,7 @@ function IdeasPage() {
       {reasonFor && (
         <Modal
           title={
-            reasonFor.action === "supprimer" ? "Supprimer l'idée" : "Remonter l'idée à la société"
+            reasonFor.action === "supprimer" ? "Refuser l'idée" : "Remonter l'idée à la société"
           }
           onClose={() => setReasonFor(null)}
         >
@@ -455,7 +459,7 @@ function IdeasPage() {
             <Field
               label={
                 reasonFor.action === "supprimer"
-                  ? "Raison de la suppression (obligatoire, visible de l'auteur)"
+                  ? "Raison du refus (obligatoire, visible de l'auteur)"
                   : "Note pour les admins (optionnelle)"
               }
               error={reasonError}
@@ -465,7 +469,7 @@ function IdeasPage() {
                 value={reason}
                 placeholder={
                   reasonFor.action === "supprimer"
-                    ? "Explique à l'auteur pourquoi son idée est supprimée…"
+                    ? "Explique à l'auteur pourquoi son idée est refusée…"
                     : "Pourquoi cette idée est d'intérêt général…"
                 }
                 onChange={(e) => setReason(e.target.value)}
@@ -474,7 +478,7 @@ function IdeasPage() {
             </Field>
             <FormActions
               pending={moderate.isPending}
-              submitLabel={reasonFor.action === "supprimer" ? "SUPPRIMER" : "REMONTER"}
+              submitLabel={reasonFor.action === "supprimer" ? "REFUSER" : "REMONTER"}
               onCancel={() => setReasonFor(null)}
             />
           </form>
@@ -687,9 +691,7 @@ function IdeaDialog({
               )}
               {idea.status === "supprimée" && (
                 <div className="p-sm bg-error-container text-on-error-container text-body-sm wrap-anywhere">
-                  <p className="font-bold">
-                    Supprimée par {idea.moderated_by_name ?? "le manager"}
-                  </p>
+                  <p className="font-bold">Refusée par {idea.moderated_by_name ?? "le manager"}</p>
                   <p className="whitespace-pre-line">Raison : {idea.deletion_reason}</p>
                 </div>
               )}
@@ -784,11 +786,7 @@ function IdeaDialog({
                     type="button"
                     disabled={actionPending}
                     onClick={() => onAction(a)}
-                    className={`flex-1 min-w-[9rem] py-sm font-label-sm text-label-sm transition-colors disabled:opacity-60 ${
-                      a === "valider"
-                        ? "bg-primary text-on-primary hover:opacity-90"
-                        : "border border-outline text-primary hover:bg-surface-container"
-                    }`}
+                    className={`flex-1 min-w-[9rem] py-sm font-label-sm text-label-sm transition-opacity hover:opacity-90 disabled:opacity-60 ${ACTION_STYLE[a]}`}
                   >
                     {ACTION_LABEL[a]}
                   </button>

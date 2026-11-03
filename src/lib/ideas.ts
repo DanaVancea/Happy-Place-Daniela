@@ -35,7 +35,7 @@ export const IDEA_STATUS_LABEL: Record<IdeaStatus, string> = {
   validée: "Validée · en mise en œuvre",
   "en débat": "En débat",
   remontée: "Remontée à la société",
-  supprimée: "Supprimée",
+  supprimée: "Refusée",
 };
 
 export async function fetchIdeas(): Promise<Idea[]> {
