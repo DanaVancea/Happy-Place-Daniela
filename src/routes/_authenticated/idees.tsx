@@ -196,6 +196,7 @@ function IdeasPage() {
     if (action === "supprimer" || action === "remonter") {
       setReason("");
       setReasonError("");
+      setOpenId(null); // ferme la lecture en grand : sinon elle s'affiche devant la fenêtre de raison
       setReasonFor({ idea, action });
       return;
     }
