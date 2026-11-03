@@ -12,7 +12,7 @@ import {
 const frDate = (iso: string) => new Intl.DateTimeFormat("fr-FR").format(new Date(iso));
 const frDay = (ymd: string) => ymd.split("-").reverse().join("/");
 
-export function DepartureNotices({ email }: { email: string }) {
+export function DepartureNotices({ email, role }: { email: string; role: string }) {
   const q = useQuery({
     queryKey: ["departure_notices", email.toLowerCase()],
     queryFn: () => fetchMyDepartureNotices(email),
@@ -21,18 +21,27 @@ export function DepartureNotices({ email }: { email: string }) {
   return (
     <div className="space-y-xs">
       {q.data.map((n) => (
-        <NoticeBanner key={n.id} notice={n} email={email} />
+        <NoticeBanner key={n.id} notice={n} email={email} showDocuments={role === "admin"} />
       ))}
     </div>
   );
 }
 
-function NoticeBanner({ notice: n, email }: { notice: DepartureNotice; email: string }) {
+function NoticeBanner({
+  notice: n,
+  email,
+  showDocuments,
+}: {
+  notice: DepartureNotice;
+  email: string;
+  showDocuments: boolean;
+}) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [zipping, setZipping] = useState(false);
-  const count = n.documents.length;
-  const reminder = !!n.reminder_at;
+  // Les documents sont gérés par les admins (RH) : un manager voit seulement l'information du départ.
+  const count = showDocuments ? n.documents.length : 0;
+  const reminder = showDocuments && !!n.reminder_at;
   const deleteOn = new Date(new Date(n.created_at).getTime() + 7 * 86400000).toISOString();
   const text =
     count === 0
