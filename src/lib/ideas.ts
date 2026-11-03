@@ -149,7 +149,7 @@ export function availableActions(role: string, idea: Idea): ModerationAction[] {
     const all: Record<IdeaStatus, ModerationAction[]> = {
       "en attente": ["valider", "debat", "remonter", "supprimer"],
       "en débat": ["valider", "supprimer", "remonter"],
-      remontée: ["valider", "debat", "supprimer"],
+      remontée: ["valider", "supprimer"],
       validée: ["debat", "supprimer"],
       supprimée: ["valider", "debat"],
     };
