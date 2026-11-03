@@ -270,6 +270,7 @@ function ReportDeparture() {
             <li key={r.id}>
               {r.user_label} · départ le {frDay(r.departure_date)} ·{" "}
               <strong className="text-primary">{r.status}</strong>
+              {r.status === "refusée" && r.decision_reason ? ` — motif : ${r.decision_reason}` : ""}
             </li>
           ))}
         </ul>

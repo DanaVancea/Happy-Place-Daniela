@@ -16,6 +16,7 @@ export type UserRow = {
   teams: string[];
   role: AppRole;
   departure_date: string | null;
+  data_exported_at: string | null;
   created_at: string;
 };
 
@@ -29,6 +30,7 @@ export type DepartureRequest = {
   comment: string | null;
   status: "en attente" | "validée" | "refusée";
   decided_by_name: string | null;
+  decision_reason: string | null;
   decided_at: string | null;
   created_at: string;
 };
@@ -71,7 +73,7 @@ export async function fetchUsers(): Promise<UserRow[]> {
   const { data, error } = await db
     .from("allowed_users")
     .select(
-      "id, email, first_name, last_name, team, departure_date, created_at, allowed_user_roles(role), manager_teams(team)",
+      "id, email, first_name, last_name, team, departure_date, data_exported_at, created_at, allowed_user_roles(role), manager_teams(team)",
     )
     .order("created_at");
   if (error) throw error;
@@ -86,6 +88,7 @@ export async function fetchUsers(): Promise<UserRow[]> {
     last_name: u.last_name,
     team: u.team,
     departure_date: u.departure_date,
+    data_exported_at: u.data_exported_at,
     created_at: u.created_at,
     role: u.allowed_user_roles?.role ?? "collaborateur",
     teams: u.manager_teams.map((m) => m.team).sort(),
@@ -121,8 +124,12 @@ export async function fetchAuditLog(): Promise<AuditEntry[]> {
   return (data ?? []) as AuditEntry[];
 }
 
-export async function decideDepartureRequest(id: string, accept: boolean) {
-  const { error } = await db.rpc("traiter_demande_depart", { _id: id, _accept: accept });
+export async function decideDepartureRequest(id: string, accept: boolean, reason?: string) {
+  const { error } = await db.rpc("traiter_demande_depart", {
+    _id: id,
+    _accept: accept,
+    _reason: reason ?? null,
+  });
   if (error) throw error;
 }
 
@@ -202,6 +209,8 @@ export async function downloadUserExport(
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 10000);
+  // Repère « données téléchargées » (n'empêche pas le téléchargement s'il échoue)
+  await db.rpc("marquer_donnees_telechargees", { _id: user.id });
 }
 
 // --- Signalement de départ par un manager -----------------------------------------

@@ -586,6 +586,7 @@ function UserCard({
           <p className="font-body-md font-bold text-primary wrap-anywhere">
             {userLabel(u)}
             {isMe && <span className="font-normal text-on-surface-variant"> (toi)</span>}
+            {u.data_exported_at && <ExportedBadge at={u.data_exported_at} />}
             {state !== "none" && (
               <span
                 className={`ml-xs px-xs py-[1px] border font-label-sm text-label-sm ${
@@ -615,7 +616,11 @@ function UserCard({
             <option value="admin">Admin</option>
           </select>
           <button type="button" onClick={exportData} disabled={exporting} className={btn}>
-            {exporting ? "…" : "EXPORTER SES DONNÉES"}
+            {exporting
+              ? "…"
+              : u.data_exported_at
+                ? "TÉLÉCHARGER À NOUVEAU"
+                : "EXPORTER SES DONNÉES"}
           </button>
           <button
             type="button"
@@ -740,6 +745,14 @@ function UserCard({
   );
 }
 
+function ExportedBadge({ at }: { at: string }) {
+  return (
+    <span className="ml-xs border border-outline px-xs py-[1px] font-label-sm text-label-sm text-primary">
+      DONNÉES TÉLÉCHARGÉES LE {new Intl.DateTimeFormat("fr-FR").format(new Date(at))}
+    </span>
+  );
+}
+
 function DeleteUserDialog({
   user,
   onClose,
@@ -772,6 +785,7 @@ function DeleteUserDialog({
     try {
       await downloadUserExport(user);
       setExported(true);
+      onDone();
       toast.success("Données téléchargées");
     } catch (e) {
       toast.error((e as Error).message);
@@ -1034,14 +1048,19 @@ function DeparturesView({
 }) {
   const [toDelete, setToDelete] = useState<UserRow | null>(null);
   const [exportingId, setExportingId] = useState<string | null>(null);
+  const [refusing, setRefusing] = useState<(typeof pending)[number] | null>(null);
+  const [reason, setReason] = useState("");
   const leaving = users
     .filter((u) => u.departure_date)
     .sort((a, b) => a.departure_date!.localeCompare(b.departure_date!));
 
   const decide = useMutation({
-    mutationFn: (v: { id: string; accept: boolean }) => decideDepartureRequest(v.id, v.accept),
+    mutationFn: (v: { id: string; accept: boolean; reason?: string }) =>
+      decideDepartureRequest(v.id, v.accept, v.reason),
     onSuccess: (_, v) => {
       toast.success(v.accept ? "Départ programmé" : "Demande refusée");
+      setRefusing(null);
+      setReason("");
       onChanged();
     },
     onError: (e) => toast.error((e as Error).message),
@@ -1113,7 +1132,7 @@ function DeparturesView({
                 <button
                   type="button"
                   disabled={decide.isPending}
-                  onClick={() => decide.mutate({ id: r.id, accept: false })}
+                  onClick={() => setRefusing(r)}
                   className={btn}
                 >
                   REFUSER
@@ -1144,6 +1163,7 @@ function DeparturesView({
                     <span className="text-on-surface-variant">
                       · {u.role === "manager" ? u.teams.join(", ") : (u.team ?? "Admin")}
                     </span>
+                    {u.data_exported_at && <ExportedBadge at={u.data_exported_at} />}
                   </p>
                   <p
                     className={`font-label-sm text-label-sm ${state === "overdue" || state === "week" ? "text-error" : "text-on-surface-variant"}`}
@@ -1162,7 +1182,11 @@ function DeparturesView({
                     onClick={() => exportData(u)}
                     className={btn}
                   >
-                    {exportingId === u.id ? "…" : "EXPORTER SES DONNÉES"}
+                    {exportingId === u.id
+                      ? "…"
+                      : u.data_exported_at
+                        ? "TÉLÉCHARGER À NOUVEAU"
+                        : "EXPORTER SES DONNÉES"}
                   </button>
                   <button
                     type="button"
@@ -1186,6 +1210,41 @@ function DeparturesView({
           })}
         </ul>
       </section>
+      <Dialog open={!!refusing} onOpenChange={(o) => !o && setRefusing(null)}>
+        <DialogContent className="w-[calc(100%-2rem)] max-w-[32rem]">
+          <DialogHeader>
+            <DialogTitle>Refuser le départ de {refusing?.user_label} ?</DialogTitle>
+            <DialogDescription>
+              Le motif est transmis au manager {refusing?.requested_by_name}.
+            </DialogDescription>
+          </DialogHeader>
+          <textarea
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            aria-label="Motif du refus"
+            placeholder="Motif du refus (obligatoire)"
+            maxLength={500}
+            rows={4}
+            className={`w-full ${field}`}
+          />
+          <DialogFooter>
+            <button type="button" onClick={() => setRefusing(null)} className={btn}>
+              Annuler
+            </button>
+            <button
+              type="button"
+              disabled={reason.trim().length < 5 || decide.isPending}
+              title={reason.trim().length < 5 ? "Indique le motif du refus" : undefined}
+              onClick={() =>
+                refusing && decide.mutate({ id: refusing.id, accept: false, reason: reason.trim() })
+              }
+              className={btnPrimary}
+            >
+              {decide.isPending ? "…" : "Refuser la demande"}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <DeleteUserDialog user={toDelete} onClose={() => setToDelete(null)} onDone={onChanged} />
     </div>
   );
