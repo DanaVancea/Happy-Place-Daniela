@@ -295,15 +295,158 @@ function IdeasPage() {
         </div>
       )}
 
-      {impactNews.length > 0 && (
-        <section className="min-w-0 rounded-lg border border-outline-variant bg-surface-container-lowest p-md">
+      <div className="bento-grid">
+        <div className="col-span-12 lg:col-span-8 min-w-0 space-y-md">
+          {canReview && (
+            <section className="min-w-0 bg-surface-container-lowest border border-outline-variant rounded-lg p-md flex flex-col">
+              <div className="flex items-center justify-between border-b border-outline-variant pb-sm mb-md">
+                <h2 className="font-headline-sm text-headline-sm text-primary">Idées à traiter</h2>
+                <div className="bg-tertiary-fixed text-on-tertiary-fixed px-xs py-1 rounded font-label-sm text-label-sm">
+                  {toModerate.length} À TRAITER
+                </div>
+              </div>
+              <div className="space-y-sm min-w-0">
+                {toModerate.length === 0 && (
+                  <p className="text-body-sm text-on-surface-variant italic">
+                    Aucune idée en attente de décision.
+                  </p>
+                )}
+                {toModerate.map((i) => (
+                  <div
+                    key={i.id}
+                    className="p-sm border border-outline-variant rounded bg-card space-y-sm min-w-0 overflow-hidden"
+                  >
+                    <IdeaMeta idea={i} />
+                    {isOverdue(i) && (
+                      <p className="w-fit rounded bg-error px-xs font-label-sm text-[10px] uppercase text-on-primary">
+                        En retard · attend depuis {businessDaysSince(waitingSince(i))} jours ouvrés
+                      </p>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setOpenId(i.id)}
+                      className="block w-full text-left text-body-sm text-on-surface line-clamp-3 wrap-anywhere hover:underline"
+                    >
+                      {i.content}
+                    </button>
+                    <div className="flex flex-wrap gap-xs pt-xs">
+                      {availableActions(role, i).map((a) => (
+                        <button
+                          key={a}
+                          disabled={moderate.isPending}
+                          onClick={() => act(i, a)}
+                          className={`flex-1 min-w-[8rem] rounded py-1 font-label-sm text-label-sm transition-opacity hover:opacity-90 disabled:opacity-60 ${ACTION_STYLE[a]}`}
+                        >
+                          {ACTION_LABEL[a]}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          <section className="min-w-0 bg-surface-container-lowest border border-outline-variant rounded-lg p-md">
+            <div className="flex flex-wrap items-center justify-between gap-sm border-b border-outline-variant pb-sm mb-md">
+              <h2 className="font-headline-sm text-headline-sm text-primary">
+                {canReview ? "Idées des équipes" : "Idées de mon équipe"}
+              </h2>
+              <div className="flex flex-wrap items-center gap-xs">
+                {(
+                  ["toutes", "en débat", "validée", ...(canReview ? ["remontée"] : [])] as Filter[]
+                ).map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setFilter(f)}
+                    aria-pressed={filter === f}
+                    className={`rounded px-sm py-1 font-label-sm text-label-sm border ${
+                      filter === f
+                        ? "bg-primary text-on-primary border-primary"
+                        : "border-outline-variant text-primary hover:bg-surface-container"
+                    }`}
+                  >
+                    {f === "toutes"
+                      ? "TOUTES"
+                      : f === "en débat"
+                        ? "EN DÉBAT"
+                        : f === "validée"
+                          ? "VALIDÉES"
+                          : "REMONTÉES"}
+                  </button>
+                ))}
+                {canReview && (
+                  <select
+                    aria-label="Filtrer par équipe"
+                    value={teamFilter}
+                    onChange={(e) => setTeamFilter(e.target.value)}
+                    className="border border-outline-variant bg-card px-xs py-1 text-body-sm"
+                  >
+                    <option value="">Toutes les équipes</option>
+                    {teamsQ.data?.map((t) => (
+                      <option key={t} value={t}>
+                        {t}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+            </div>
+            {published.length === 0 && (
+              <p className="text-body-sm text-on-surface-variant italic">
+                Aucune idée publiée pour le moment.
+              </p>
+            )}
+            <div className="space-y-xs">
+              {published.map((i) => (
+                <div
+                  key={i.id}
+                  className="p-sm border border-outline-variant rounded bg-card min-w-0 overflow-hidden space-y-xs"
+                >
+                  <IdeaMeta idea={i} />
+                  <button
+                    type="button"
+                    onClick={() => setOpenId(i.id)}
+                    className="block w-full text-left text-body-sm text-on-surface line-clamp-3 wrap-anywhere hover:underline"
+                  >
+                    {i.content}
+                  </button>
+                  <div className="flex items-center gap-sm pt-xs">
+                    <LikeButton
+                      idea={i}
+                      count={likeCount.get(i.id) ?? 0}
+                      liked={myLikes.has(i.id)}
+                      allowed={inTeam(i)}
+                      pending={like.isPending}
+                      onToggle={() => like.mutate({ id: i.id, liked: !myLikes.has(i.id) })}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setOpenId(i.id)}
+                      className="font-label-sm text-label-sm text-primary underline"
+                    >
+                      {i.status === "en débat" && inTeam(i) ? "PARTICIPER AU DÉBAT" : "LIRE"}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
+
+        <section className="col-span-12 lg:col-span-4 min-w-0 self-start bg-surface-container-lowest border border-outline-variant rounded-lg p-md">
           <h2 className="font-headline-sm text-headline-sm text-primary">
             Voici ce que vos idées ont changé
           </h2>
           <p className="mb-md text-body-sm text-on-surface-variant">
             Des idées validées, mises en place, puis racontées dans les actualités.
           </p>
-          <ul className="grid gap-sm md:grid-cols-2 lg:grid-cols-3">
+          {impactNews.length === 0 && (
+            <p className="text-body-sm italic text-on-surface-variant">
+              Aucun article pour le moment : les prochaines idées mises en place y seront racontées.
+            </p>
+          )}
+          <ul className="grid gap-sm">
             {impactNews.map(({ a, news }) => (
               <li key={a.news_id} className="min-w-0">
                 <button
@@ -329,146 +472,6 @@ function IdeasPage() {
               </li>
             ))}
           </ul>
-        </section>
-      )}
-
-      <div className="bento-grid">
-        {canReview && (
-          <section className="col-span-12 lg:col-span-5 min-w-0 bg-surface-container-lowest border border-outline-variant rounded-lg p-md flex flex-col">
-            <div className="flex items-center justify-between border-b border-outline-variant pb-sm mb-md">
-              <h2 className="font-headline-sm text-headline-sm text-primary">Idées à traiter</h2>
-              <div className="bg-tertiary-fixed text-on-tertiary-fixed px-xs py-1 rounded font-label-sm text-label-sm">
-                {toModerate.length} À TRAITER
-              </div>
-            </div>
-            <div className="space-y-sm min-w-0">
-              {toModerate.length === 0 && (
-                <p className="text-body-sm text-on-surface-variant italic">
-                  Aucune idée en attente de décision.
-                </p>
-              )}
-              {toModerate.map((i) => (
-                <div
-                  key={i.id}
-                  className="p-sm border border-outline-variant rounded bg-card space-y-sm min-w-0 overflow-hidden"
-                >
-                  <IdeaMeta idea={i} />
-                  {isOverdue(i) && (
-                    <p className="w-fit rounded bg-error px-xs font-label-sm text-[10px] uppercase text-on-primary">
-                      En retard · attend depuis {businessDaysSince(waitingSince(i))} jours ouvrés
-                    </p>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => setOpenId(i.id)}
-                    className="block w-full text-left text-body-sm text-on-surface line-clamp-3 wrap-anywhere hover:underline"
-                  >
-                    {i.content}
-                  </button>
-                  <div className="flex flex-wrap gap-xs pt-xs">
-                    {availableActions(role, i).map((a) => (
-                      <button
-                        key={a}
-                        disabled={moderate.isPending}
-                        onClick={() => act(i, a)}
-                        className={`flex-1 min-w-[8rem] rounded py-1 font-label-sm text-label-sm transition-opacity hover:opacity-90 disabled:opacity-60 ${ACTION_STYLE[a]}`}
-                      >
-                        {ACTION_LABEL[a]}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        <section
-          className={`col-span-12 ${canReview ? "lg:col-span-7" : ""} min-w-0 bg-surface-container-lowest border border-outline-variant rounded-lg p-md`}
-        >
-          <div className="flex flex-wrap items-center justify-between gap-sm border-b border-outline-variant pb-sm mb-md">
-            <h2 className="font-headline-sm text-headline-sm text-primary">
-              {canReview ? "Idées des équipes" : "Idées de mon équipe"}
-            </h2>
-            <div className="flex flex-wrap items-center gap-xs">
-              {(
-                ["toutes", "en débat", "validée", ...(canReview ? ["remontée"] : [])] as Filter[]
-              ).map((f) => (
-                <button
-                  key={f}
-                  onClick={() => setFilter(f)}
-                  aria-pressed={filter === f}
-                  className={`rounded px-sm py-1 font-label-sm text-label-sm border ${
-                    filter === f
-                      ? "bg-primary text-on-primary border-primary"
-                      : "border-outline-variant text-primary hover:bg-surface-container"
-                  }`}
-                >
-                  {f === "toutes"
-                    ? "TOUTES"
-                    : f === "en débat"
-                      ? "EN DÉBAT"
-                      : f === "validée"
-                        ? "VALIDÉES"
-                        : "REMONTÉES"}
-                </button>
-              ))}
-              {canReview && (
-                <select
-                  aria-label="Filtrer par équipe"
-                  value={teamFilter}
-                  onChange={(e) => setTeamFilter(e.target.value)}
-                  className="border border-outline-variant bg-card px-xs py-1 text-body-sm"
-                >
-                  <option value="">Toutes les équipes</option>
-                  {teamsQ.data?.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
-          </div>
-          {published.length === 0 && (
-            <p className="text-body-sm text-on-surface-variant italic">
-              Aucune idée publiée pour le moment.
-            </p>
-          )}
-          <div className="space-y-xs">
-            {published.map((i) => (
-              <div
-                key={i.id}
-                className="p-sm border border-outline-variant rounded bg-card min-w-0 overflow-hidden space-y-xs"
-              >
-                <IdeaMeta idea={i} />
-                <button
-                  type="button"
-                  onClick={() => setOpenId(i.id)}
-                  className="block w-full text-left text-body-sm text-on-surface line-clamp-3 wrap-anywhere hover:underline"
-                >
-                  {i.content}
-                </button>
-                <div className="flex items-center gap-sm pt-xs">
-                  <LikeButton
-                    idea={i}
-                    count={likeCount.get(i.id) ?? 0}
-                    liked={myLikes.has(i.id)}
-                    allowed={inTeam(i)}
-                    pending={like.isPending}
-                    onToggle={() => like.mutate({ id: i.id, liked: !myLikes.has(i.id) })}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setOpenId(i.id)}
-                    className="font-label-sm text-label-sm text-primary underline"
-                  >
-                    {i.status === "en débat" && inTeam(i) ? "PARTICIPER AU DÉBAT" : "LIRE"}
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
         </section>
 
         <section className="col-span-12 min-w-0 bg-surface-container-lowest border border-outline-variant rounded-lg p-md">
