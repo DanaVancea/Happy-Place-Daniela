@@ -150,9 +150,9 @@ function DirectoryPage() {
         </p>
       )}
       <ul className="grid gap-sm sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {people.map((p) => (
+        {people.map((p, i) => (
           <li
-            key={`${p.first_name}-${p.last_name}-${p.team}`}
+            key={`${i}-${p.first_name}-${p.last_name}-${p.team}`}
             className="flex items-center gap-sm rounded-lg border border-outline-variant bg-surface-container-lowest p-sm min-w-0"
           >
             <div
