@@ -129,6 +129,9 @@ function IdeasPage() {
     const okStatus =
       i.status === "validée" || i.status === "en débat" || (canReview && i.status === "remontée");
     if (!okStatus) return false;
+    // Collaborateur : uniquement l'équipe actuelle (ses anciennes idées d'une autre équipe restent dans « Mes idées »)
+    if (role === "collaborateur" && (!myTeam || myTeam.toLowerCase() !== i.team.toLowerCase()))
+      return false;
     if (filter !== "toutes" && i.status !== filter) return false;
     if (teamFilter && i.team !== teamFilter) return false;
     return true;
