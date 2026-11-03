@@ -480,7 +480,7 @@ function UsersView({
       </div>
 
       <Dialog open={!!roleDialog} onOpenChange={(o) => !o && setRoleDialog(null)}>
-        <DialogContent>
+        <DialogContent className="w-[calc(100%-2rem)] max-w-[32rem]">
           <DialogHeader>
             <DialogTitle>Équipe de {roleDialog && userLabel(roleDialog.user)}</DialogTitle>
             <DialogDescription>Un collaborateur appartient à une seule équipe.</DialogDescription>
@@ -781,7 +781,7 @@ function DeleteUserDialog({
   }
   return (
     <Dialog open={!!user} onOpenChange={(o) => !o && close()}>
-      <DialogContent>
+      <DialogContent className="w-[calc(100%-2rem)] max-w-[32rem]">
         <DialogHeader>
           <DialogTitle>Supprimer {user && userLabel(user)} ?</DialogTitle>
           <DialogDescription>Cette action est définitive.</DialogDescription>
