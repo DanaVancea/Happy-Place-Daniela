@@ -11,6 +11,7 @@ import {
   type MediaDraft,
 } from "@/lib/news-media";
 import type { News } from "@/lib/dashboard";
+import { fetchIdeas } from "@/lib/ideas";
 import {
   DEPARTMENTS,
   LEVELS,
@@ -64,7 +65,11 @@ export function NewsEditor({
   const [publishAt, setPublishAt] = useState(toLocalInput(editing?.publish_at));
   const [until, setUntil] = useState(editing?.featured_until?.slice(0, 10) ?? "");
   const [media, setMedia] = useState<MediaDraft>(editing ? mediaFromNews(editing) : emptyMedia());
+  const [ideaId, setIdeaId] = useState(editing?.idea_id ?? "");
   const [showErrs, setShowErrs] = useState(false);
+  // Idées validées que l'article peut raconter (l'admin voit toutes les équipes)
+  const ideas = useQuery({ queryKey: ["ideas"], queryFn: fetchIdeas, retry: false });
+  const linkable = (ideas.data ?? []).filter((i) => i.status === "validée" || i.id === ideaId);
   const linkErrs = showErrs ? linkErrors(media.links) : {};
   const future = !!publishAt && new Date(publishAt).getTime() > Date.now();
 
@@ -92,6 +97,7 @@ export function NewsEditor({
           author_email: email,
           links: toNewsLinks(media.links),
           media,
+          idea_id: ideaId || null,
         },
         status,
       ),
@@ -175,6 +181,29 @@ export function NewsEditor({
           onChange={(e) => setBody(e.target.value)}
           placeholder="Rédige l'actualité…"
         />
+      </div>
+      <div className="space-y-xs">
+        <label htmlFor="n-idea" className={label}>
+          NÉ D'UNE IDÉE (OPTIONNEL, IDÉE VALIDÉE UNIQUEMENT)
+        </label>
+        <select
+          id="n-idea"
+          className={field}
+          value={ideaId}
+          onChange={(e) => setIdeaId(e.target.value)}
+        >
+          <option value="">Aucune idée liée</option>
+          {linkable.map((i) => (
+            <option key={i.id} value={i.id}>
+              {i.team} · {i.author_name} — {i.content.slice(0, 70)}
+              {i.content.length > 70 ? "…" : ""}
+            </option>
+          ))}
+        </select>
+        <p className="text-body-sm text-on-surface-variant">
+          L'article apparaîtra dans « Voici ce que vos idées ont changé » de la Boîte à idées, avec
+          le nom de l'auteur de l'idée.
+        </p>
       </div>
       <div className="grid items-end gap-sm sm:grid-cols-2 lg:grid-cols-4">
         {!known && (

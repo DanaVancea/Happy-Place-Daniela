@@ -341,6 +341,7 @@ export type Database = {
           created_at: string
           id: string
           image_path: string | null
+          idea_id: string | null
           links: Json
           revalidate_at: string | null
           status: Database["public"]["Enums"]["news_status"]
@@ -359,6 +360,7 @@ export type Database = {
           created_at?: string
           id?: string
           image_path?: string | null
+          idea_id?: string | null
           links?: Json
           revalidate_at?: string | null
           status?: Database["public"]["Enums"]["news_status"]
@@ -377,6 +379,7 @@ export type Database = {
           created_at?: string
           id?: string
           image_path?: string | null
+          idea_id?: string | null
           links?: Json
           revalidate_at?: string | null
           status?: Database["public"]["Enums"]["news_status"]

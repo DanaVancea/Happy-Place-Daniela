@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { BrandHeader } from "@/components/brand-header";
 import { Icon } from "@/components/icon";
 import { signOut } from "@/lib/auth";
-import { canModerate, fetchIdeas, fetchMyTeams } from "@/lib/ideas";
+import { canModerate, fetchIdeas, fetchMyTeams, isOverdue } from "@/lib/ideas";
 
 const TABS = [
   { to: "/", label: "Actualités et indicateurs", exact: true },
@@ -50,13 +50,15 @@ export function AppShell({
     enabled: canReview && !!normEmail,
     retry: false,
   });
-  const pendingCount = canReview
+  const toHandle = canReview
     ? (ideas.data ?? []).filter(
         (i) =>
           canModerate(role ?? "", myTeams.data?.managed ?? [], i) &&
           (i.status === "en attente" || (role === "admin" && i.status === "remontée")),
-      ).length
-    : 0;
+      )
+    : [];
+  const pendingCount = toHandle.length;
+  const hasOverdue = toHandle.some(isOverdue);
 
   return (
     <div className="bg-background text-on-surface font-body-md min-h-screen flex flex-col">
@@ -77,8 +79,8 @@ export function AppShell({
                 {t.label}
                 {t.to === "/idees" && pendingCount > 0 && (
                   <span
-                    className="rounded bg-tertiary-fixed px-xs font-label-sm text-label-sm text-on-tertiary-fixed"
-                    aria-label={`${pendingCount} idée${pendingCount > 1 ? "s" : ""} à traiter`}
+                    className={`rounded px-xs font-label-sm text-label-sm ${hasOverdue ? "bg-error text-on-primary" : "bg-tertiary-fixed text-on-tertiary-fixed"}`}
+                    aria-label={`${pendingCount} idée${pendingCount > 1 ? "s" : ""} à traiter${hasOverdue ? ", certaines en retard" : ""}`}
                   >
                     {pendingCount}
                   </span>

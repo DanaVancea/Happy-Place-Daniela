@@ -159,3 +159,49 @@ export function availableActions(role: string, idea: Idea): ModerationAction[] {
   if (idea.status === "en débat") return ["valider", "supprimer"];
   return [];
 }
+
+/* ---------- Rappel : idées qui attendent une décision ---------- */
+
+/** Une idée est « en retard » au-delà de ce nombre de jours ouvrés. */
+export const REMINDER_BUSINESS_DAYS = 3;
+
+/** Jours ouvrés (lundi à vendredi) écoulés depuis une date. */
+export function businessDaysSince(iso: string, now: Date = new Date()): number {
+  const d = new Date(iso);
+  d.setHours(0, 0, 0, 0);
+  const end = new Date(now);
+  end.setHours(0, 0, 0, 0);
+  let n = 0;
+  for (d.setDate(d.getDate() + 1); d <= end; d.setDate(d.getDate() + 1)) {
+    const day = d.getDay();
+    if (day !== 0 && day !== 6) n++;
+  }
+  return n;
+}
+
+/** Date depuis laquelle l'idée attend une décision (une remontée attend l'admin depuis sa remontée). */
+export const waitingSince = (idea: Idea): string =>
+  idea.status === "remontée" && idea.moderated_at ? idea.moderated_at : idea.created_at;
+
+/** Idée à traiter depuis plus de 3 jours ouvrés. */
+export const isOverdue = (idea: Idea): boolean =>
+  (idea.status === "en attente" || idea.status === "remontée") &&
+  businessDaysSince(waitingSince(idea)) > REMINDER_BUSINESS_DAYS;
+
+/* ---------- « Voici ce que vos idées ont changé » ---------- */
+
+export type ImpactArticle = {
+  news_id: string;
+  title: string;
+  summary: string | null;
+  department: string | null;
+  published_at: string;
+  author_name: string;
+  team: string;
+};
+
+export async function fetchImpactArticles(): Promise<ImpactArticle[]> {
+  const { data, error } = await db.rpc("idea_impact_articles");
+  if (error) throw error;
+  return (data ?? []) as ImpactArticle[];
+}

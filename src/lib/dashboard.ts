@@ -1,12 +1,16 @@
 import { loadBrowserLib } from "@/lib/browser-lib";
 import type { Database, Json } from "@/integrations/supabase/types";
-import { applyNewsImage, removeNewsImageFile, type MediaDraft, type NewsLink } from "@/lib/news-media";
+import {
+  applyNewsImage,
+  removeNewsImageFile,
+  type MediaDraft,
+  type NewsLink,
+} from "@/lib/news-media";
 import { supabase } from "@/integrations/supabase/client";
 
 export const db = supabase;
 
 type Enums = Database["public"]["Enums"];
-
 
 export type News = {
   id: string;
@@ -24,6 +28,7 @@ export type News = {
   pinned?: boolean;
   publish_at?: string | null;
   featured_until?: string | null;
+  idea_id?: string | null;
 };
 
 export type Submission = {
@@ -224,7 +229,9 @@ export async function exportMyRecentSubmissions(email: string): Promise<number> 
         row.team,
         row.content,
         row.status,
-      ].map((value) => csvCell(String(value))).join(";"),
+      ]
+        .map((value) => csvCell(String(value)))
+        .join(";"),
     ),
   ].join("\r\n");
 
@@ -243,16 +250,22 @@ export async function exportMyRecentSubmissions(email: string): Promise<number> 
 export async function reviewSubmission(
   input:
     | { id: string; status: "validée" }
-    | { id: string; status: "refusée"; rejection_category: RejectionCategory; rejection_note: string },
+    | {
+        id: string;
+        status: "refusée";
+        rejection_category: RejectionCategory;
+        rejection_note: string;
+      },
 ) {
   const patch =
     input.status === "refusée"
-      ? { status: input.status, rejection_category: input.rejection_category, rejection_note: input.rejection_note.trim() }
+      ? {
+          status: input.status,
+          rejection_category: input.rejection_category,
+          rejection_note: input.rejection_note.trim(),
+        }
       : { status: input.status, rejection_category: null, rejection_note: null };
-  const { error } = await db
-    .from("submissions")
-    .update(patch)
-    .eq("id", input.id);
+  const { error } = await db.from("submissions").update(patch).eq("id", input.id);
   if (error) throw error;
 }
 
@@ -294,9 +307,13 @@ export async function fetchValidatedSubmissions(): Promise<ValidatedSubmission[]
       .from("submission_status_history")
       .select("submission_id, changed_at")
       .eq("new_status", "validée")
-      .in("submission_id", rows.map((r) => r.id))
+      .in(
+        "submission_id",
+        rows.map((r) => r.id),
+      )
       .order("changed_at", { ascending: false });
-    for (const h of hist ?? []) if (!dates.has(h.submission_id)) dates.set(h.submission_id, h.changed_at);
+    for (const h of hist ?? [])
+      if (!dates.has(h.submission_id)) dates.set(h.submission_id, h.changed_at);
   }
   return rows
     .map((r) => ({ ...r, validated_at: dates.get(r.id) ?? null }))
@@ -306,7 +323,10 @@ export async function fetchValidatedSubmissions(): Promise<ValidatedSubmission[]
 export async function updateBlockerStatus(input: { id: string; status: string }) {
   const { error } = await db
     .from("blockers")
-    .update({ status: input.status as Enums["blocker_status"], updated_at: new Date().toISOString() })
+    .update({
+      status: input.status as Enums["blocker_status"],
+      updated_at: new Date().toISOString(),
+    })
     .eq("id", input.id);
   if (error) throw error;
 }
@@ -340,7 +360,13 @@ export function timeAgo(iso: string): string {
  * CRUD complet — news / submissions / blockers / metrics
  * ========================================================== */
 
-export type NewsInput = { title: string; body: string; author: string; status: string; links?: NewsLink[] };
+export type NewsInput = {
+  title: string;
+  body: string;
+  author: string;
+  status: string;
+  links?: NewsLink[];
+};
 export type SubmissionInput = {
   author_name: string;
   team: string;
@@ -373,7 +399,11 @@ export async function fetchAllNews(): Promise<News[]> {
 }
 
 function newsRow(input: NewsInput) {
-  return { ...input, links: (input.links ?? []) as unknown as Json, status: input.status as Enums["news_status"] };
+  return {
+    ...input,
+    links: (input.links ?? []) as unknown as Json,
+    status: input.status as Enums["news_status"],
+  };
 }
 
 /** Admin : crée l'actualité (pour obtenir son id), puis envoie l'image. */
@@ -411,7 +441,9 @@ function submissionRow(input: SubmissionInput) {
     team: input.team,
     content: input.content,
     status: input.status as Enums["submission_status"],
-    rejection_category: rejected ? ((input.rejection_category || null) as Enums["rejection_category"] | null) : null,
+    rejection_category: rejected
+      ? ((input.rejection_category || null) as Enums["rejection_category"] | null)
+      : null,
     rejection_note: rejected ? input.rejection_note?.trim() || null : null,
   };
 }
@@ -440,8 +472,12 @@ export async function submitIdea(input: Omit<SubmissionInput, "status">, file?: 
     if (upErr) throw upErr;
   }
   const { error } = await db.from("submissions").insert({
-    author_name: input.author_name, team: input.team, content: input.content, status: "en attente",
-    attachment_path, attachment_name,
+    author_name: input.author_name,
+    team: input.team,
+    content: input.content,
+    status: "en attente",
+    attachment_path,
+    attachment_name,
   });
   if (error) throw error;
 }
@@ -476,14 +512,24 @@ export async function fetchAllBlockers(): Promise<Blocker[]> {
 export async function createBlocker(input: BlockerInput) {
   const { error } = await db
     .from("blockers")
-    .insert({ ...input, severity: input.severity as Enums["blocker_severity"], status: input.status as Enums["blocker_status"], updated_at: new Date().toISOString() });
+    .insert({
+      ...input,
+      severity: input.severity as Enums["blocker_severity"],
+      status: input.status as Enums["blocker_status"],
+      updated_at: new Date().toISOString(),
+    });
   if (error) throw error;
 }
 
 export async function updateBlocker(id: string, input: BlockerInput) {
   const { error } = await db
     .from("blockers")
-    .update({ ...input, severity: input.severity as Enums["blocker_severity"], status: input.status as Enums["blocker_status"], updated_at: new Date().toISOString() })
+    .update({
+      ...input,
+      severity: input.severity as Enums["blocker_severity"],
+      status: input.status as Enums["blocker_status"],
+      updated_at: new Date().toISOString(),
+    })
     .eq("id", id);
   if (error) throw error;
 }
@@ -524,7 +570,9 @@ export type SubmissionStatusHistory = {
   changed_at: string;
 };
 
-export async function fetchSubmissionHistory(submissionId: string): Promise<SubmissionStatusHistory[]> {
+export async function fetchSubmissionHistory(
+  submissionId: string,
+): Promise<SubmissionStatusHistory[]> {
   const { data, error } = await supabase
     .from("submission_status_history")
     .select("*")
@@ -534,7 +582,12 @@ export async function fetchSubmissionHistory(submissionId: string): Promise<Subm
   return (data ?? []) as SubmissionStatusHistory[];
 }
 
-export type MetricHistoryPoint = { id: string; metric_key: string; value: number; recorded_at: string };
+export type MetricHistoryPoint = {
+  id: string;
+  metric_key: string;
+  value: number;
+  recorded_at: string;
+};
 
 export async function fetchMetricHistory(key: string): Promise<MetricHistoryPoint[]> {
   const { data, error } = await supabase
@@ -548,7 +601,10 @@ export async function fetchMetricHistory(key: string): Promise<MetricHistoryPoin
 }
 
 /** Supprime du stockage les pièces jointes échues de la file. Renvoie supprimés et restants. */
-export async function processAttachmentDeletionQueue(): Promise<{ deleted: number; remaining: number }> {
+export async function processAttachmentDeletionQueue(): Promise<{
+  deleted: number;
+  remaining: number;
+}> {
   const { data, error } = await supabase
     .from("attachment_deletion_queue")
     .select("id, path")
@@ -563,7 +619,10 @@ export async function processAttachmentDeletionQueue(): Promise<{ deleted: numbe
     await supabase
       .from("attachment_deletion_queue")
       .update({ last_error: rmError.message })
-      .in("id", rows.map((r) => r.id));
+      .in(
+        "id",
+        rows.map((r) => r.id),
+      );
     return { deleted: 0, remaining: rows.length };
   }
   const removedSet = new Set((removed ?? []).map((o) => o.name));
@@ -583,7 +642,11 @@ export async function processAttachmentDeletionQueue(): Promise<{ deleted: numbe
     if (listError) {
       stillThere.push({ id: r.id, path: r.path, errorMessage: listError.message });
     } else if ((listing ?? []).some((o) => o.name === fileName)) {
-      stillThere.push({ id: r.id, path: r.path, errorMessage: "Fichier non supprimé par le stockage" });
+      stillThere.push({
+        id: r.id,
+        path: r.path,
+        errorMessage: "Fichier non supprimé par le stockage",
+      });
     } else {
       done.push(r);
     }
@@ -598,7 +661,10 @@ export async function processAttachmentDeletionQueue(): Promise<{ deleted: numbe
     const { error: delError } = await supabase
       .from("attachment_deletion_queue")
       .delete()
-      .in("id", done.map((r) => r.id));
+      .in(
+        "id",
+        done.map((r) => r.id),
+      );
     if (delError) throw delError;
   }
   if (stillThere.length) {
@@ -657,13 +723,20 @@ export async function markDepartureNoticeDownloaded(id: string) {
 }
 
 export async function downloadDepartureZip(notice: DepartureNotice) {
-  const JSZip = await loadBrowserLib<typeof import("jszip")>("/vendor/jszip-3.10.2.min.js", "JSZip");
+  const JSZip = await loadBrowserLib<typeof import("jszip")>(
+    "/vendor/jszip-3.10.2.min.js",
+    "JSZip",
+  );
   const zip = new JSZip();
   const used = new Set<string>();
   for (const d of notice.documents) {
     const { data, error } = await supabase.storage.from("submission-attachments").download(d.path);
     if (error) throw error;
-    const safe = d.excerpt.replace(/[\\/:*?"<>|\n\r]+/g, " ").trim().slice(0, 60) || "document";
+    const safe =
+      d.excerpt
+        .replace(/[\\/:*?"<>|\n\r]+/g, " ")
+        .trim()
+        .slice(0, 60) || "document";
     let name = `${d.created_at.slice(0, 10)} - ${safe}.pdf`;
     let i = 2;
     while (used.has(name)) name = `${d.created_at.slice(0, 10)} - ${safe} (${i++}).pdf`;

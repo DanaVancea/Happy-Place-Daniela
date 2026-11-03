@@ -20,6 +20,7 @@ type Person = {
   team: string | null;
   role: "admin" | "manager" | "collaborateur";
   joined_at: string;
+  validated_ideas?: number;
 };
 
 const NEW_DAYS = 90;
@@ -156,6 +157,16 @@ function DirectoryPage() {
             <div className="min-w-0">
               <p className="font-body-md font-bold text-primary wrap-anywhere">
                 {p.first_name} {p.last_name}
+                {Number(p.validated_ideas ?? 0) > 0 && (
+                  <span
+                    className="ml-xs rounded bg-success px-xs font-label-sm text-label-sm text-on-primary"
+                    title="A proposé une idée validée par son manager"
+                  >
+                    {Number(p.validated_ideas) > 1
+                      ? `${p.validated_ideas} IDÉES VALIDÉES`
+                      : "IDÉE VALIDÉE"}
+                  </span>
+                )}
                 {isNew(p) && (
                   <span className="ml-xs rounded bg-tertiary-fixed px-xs font-label-sm text-label-sm text-on-tertiary-fixed">
                     NOUVEAU·ELLE

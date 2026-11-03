@@ -222,6 +222,7 @@ export type NewsEdit = {
   author_email: string;
   links: NewsLink[];
   media: MediaDraft;
+  idea_id?: string | null;
 };
 
 export async function saveNews(input: NewsEdit, status: "brouillon" | "publiée") {
@@ -238,6 +239,7 @@ export async function saveNews(input: NewsEdit, status: "brouillon" | "publiée"
     author_email: input.author_email.toLowerCase(),
     status,
     links: input.links as unknown as Json,
+    idea_id: input.idea_id ?? null,
   };
   const { data, error } = input.id
     ? await db.from("news").update(payload).eq("id", input.id).select("id").single()

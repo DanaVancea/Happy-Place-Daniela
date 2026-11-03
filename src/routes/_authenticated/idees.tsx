@@ -8,7 +8,10 @@ import { AppShell } from "@/components/app-shell";
 import { Icon } from "@/components/icon";
 import { CharCounter, formatExactDate } from "@/components/expandable-card";
 import { Linkify } from "@/components/linkify";
-import { timeAgo } from "@/lib/dashboard";
+import { fetchNews, timeAgo } from "@/lib/dashboard";
+import { NewsReader } from "@/components/news-reader";
+import { useNewsMarks } from "@/lib/use-news-marks";
+import type { News } from "@/lib/dashboard";
 import {
   IDEA_STATUS_LABEL,
   addComment,
@@ -17,6 +20,11 @@ import {
   deleteComment,
   fetchComments,
   fetchIdeas,
+  fetchImpactArticles,
+  isOverdue,
+  businessDaysSince,
+  waitingSince,
+  REMINDER_BUSINESS_DAYS,
   fetchLikes,
   fetchMyTeams,
   fetchTeams,
@@ -88,6 +96,14 @@ function IdeasPage() {
     enabled: canReview,
     retry: false,
   });
+  const impactQ = useQuery({
+    queryKey: ["idea_impact"],
+    queryFn: fetchImpactArticles,
+    retry: false,
+  });
+  const newsQ = useQuery({ queryKey: ["news"], queryFn: fetchNews, retry: false });
+  const marks = useNewsMarks(role === "admin");
+  const [readingNews, setReadingNews] = useState<News | null>(null);
   const myTeam = myTeamsQ.data?.team ?? null;
   const managed = myTeamsQ.data?.managed ?? [];
 
@@ -130,6 +146,13 @@ function IdeasPage() {
       canModerate(role, managed, i) &&
       (i.status === "en attente" || (role === "admin" && i.status === "remontée")),
   );
+  toModerate.sort(
+    (a, b) => new Date(waitingSince(a)).getTime() - new Date(waitingSince(b)).getTime(),
+  );
+  const overdueCount = toModerate.filter(isOverdue).length;
+  const impactNews = (impactQ.data ?? [])
+    .map((a) => ({ a, news: newsQ.data?.find((n) => n.id === a.news_id) }))
+    .filter((x): x is { a: (typeof x)["a"]; news: News } => !!x.news);
   const mine = ideas.filter((i) => i.author_email.toLowerCase() === myEmail);
   const toModerateIds = new Set(toModerate.map((i) => i.id));
   const published = ideas.filter((i) => {
@@ -258,6 +281,57 @@ function IdeasPage() {
         </p>
       )}
 
+      {overdueCount > 0 && (
+        <div
+          role="status"
+          className="flex items-center gap-sm rounded-lg bg-tertiary-fixed p-sm text-on-tertiary-fixed"
+        >
+          <Icon name="schedule" />
+          <p className="text-body-md font-bold">
+            {overdueCount === 1
+              ? `1 idée attend ta décision depuis plus de ${REMINDER_BUSINESS_DAYS} jours ouvrés.`
+              : `${overdueCount} idées attendent ta décision depuis plus de ${REMINDER_BUSINESS_DAYS} jours ouvrés.`}
+          </p>
+        </div>
+      )}
+
+      {impactNews.length > 0 && (
+        <section className="min-w-0 rounded-lg border border-outline-variant bg-surface-container-lowest p-md">
+          <h2 className="font-headline-sm text-headline-sm text-primary">
+            Voici ce que vos idées ont changé
+          </h2>
+          <p className="mb-md text-body-sm text-on-surface-variant">
+            Des idées validées, mises en place, puis racontées dans les actualités.
+          </p>
+          <ul className="grid gap-sm md:grid-cols-2 lg:grid-cols-3">
+            {impactNews.map(({ a, news }) => (
+              <li key={a.news_id} className="min-w-0">
+                <button
+                  type="button"
+                  onClick={() => setReadingNews(news)}
+                  className="flex h-full w-full flex-col gap-xs rounded border border-outline-variant bg-card p-sm text-left hover:bg-surface-container"
+                >
+                  <span className="w-fit rounded bg-secondary-fixed px-xs font-label-sm text-[10px] uppercase text-primary">
+                    Idée de {a.author_name} · {a.team}
+                  </span>
+                  <span className="font-body-md font-bold text-primary wrap-anywhere">
+                    {a.title}
+                  </span>
+                  {a.summary && (
+                    <span className="line-clamp-2 text-body-sm text-on-surface-variant wrap-anywhere">
+                      {a.summary}
+                    </span>
+                  )}
+                  <span className="mt-auto font-label-sm text-label-sm text-primary underline">
+                    LIRE L'ARTICLE · {formatExactDate(a.published_at).split(" à ")[0]}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <div className="bento-grid">
         {canReview && (
           <section className="col-span-12 lg:col-span-5 min-w-0 bg-surface-container-lowest border border-outline-variant rounded-lg p-md flex flex-col">
@@ -279,6 +353,11 @@ function IdeasPage() {
                   className="p-sm border border-outline-variant rounded bg-card space-y-sm min-w-0 overflow-hidden"
                 >
                   <IdeaMeta idea={i} />
+                  {isOverdue(i) && (
+                    <p className="w-fit rounded bg-error px-xs font-label-sm text-[10px] uppercase text-on-primary">
+                      En retard · attend depuis {businessDaysSince(waitingSince(i))} jours ouvrés
+                    </p>
+                  )}
                   <button
                     type="button"
                     onClick={() => setOpenId(i.id)}
@@ -429,6 +508,14 @@ function IdeasPage() {
           </div>
         </section>
       </div>
+
+      <NewsReader
+        news={readingNews}
+        list={impactNews.map((x) => x.news)}
+        marks={marks}
+        onSelect={setReadingNews}
+        onClose={() => setReadingNews(null)}
+      />
 
       <IdeaDialog
         idea={opened}
