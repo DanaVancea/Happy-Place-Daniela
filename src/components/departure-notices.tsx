@@ -37,8 +37,8 @@ function NoticeBanner({ notice: n, email }: { notice: DepartureNotice; email: st
   const text =
     count === 0
       ? n.kind === "préavis"
-        ? `${n.departing_label} quitte Happy Place le ${frDay(n.departure_date)}. Aucun document à télécharger.`
-        : `${n.departing_label} a quitté Happy Place. Aucun document à télécharger.`
+        ? `${n.departing_label} quitte Happy Place le ${frDay(n.departure_date)}.`
+        : `${n.departing_label} a quitté Happy Place.`
       : n.kind === "préavis"
         ? `${n.departing_label} quitte Happy Place le ${frDay(n.departure_date)} : ${count} document(s) joint(s) à ses demandes seront alors supprimés.`
         : `${n.departing_label} a quitté Happy Place : ${count} document(s) joint(s) à ses demandes seront supprimés le ${frDate(deleteOn)}`;
@@ -60,7 +60,8 @@ function NoticeBanner({ notice: n, email }: { notice: DepartureNotice; email: st
     }
   }
 
-  const btn = "px-sm py-1 border border-outline text-primary font-label-sm text-label-sm hover:bg-surface-container disabled:opacity-50";
+  const btn =
+    "px-sm py-1 border border-outline text-primary font-label-sm text-label-sm hover:bg-surface-container disabled:opacity-50";
 
   return (
     <div
@@ -74,7 +75,12 @@ function NoticeBanner({ notice: n, email }: { notice: DepartureNotice; email: st
       <div className="flex flex-wrap gap-xs">
         {count > 0 && (
           <>
-            <button type="button" className={btn} onClick={() => setOpen((o) => !o)} aria-expanded={open}>
+            <button
+              type="button"
+              className={btn}
+              onClick={() => setOpen((o) => !o)}
+              aria-expanded={open}
+            >
               {open ? "Masquer les documents" : "Voir les documents"}
             </button>
             <button type="button" className={btn} onClick={zipAll} disabled={zipping}>
@@ -82,21 +88,31 @@ function NoticeBanner({ notice: n, email }: { notice: DepartureNotice; email: st
             </button>
           </>
         )}
-        <button type="button" className={btn} onClick={() => mark.mutate()} disabled={mark.isPending}>
+        <button
+          type="button"
+          className={btn}
+          onClick={() => mark.mutate()}
+          disabled={mark.isPending}
+        >
           {count > 0 ? "J'ai téléchargé les documents" : "J'ai pris note"}
         </button>
       </div>
       {open && (
         <ul className="border-t border-outline-variant pt-xs space-y-xs">
           {n.documents.map((d) => (
-            <li key={d.path} className="flex flex-wrap items-center justify-between gap-xs text-body-sm">
+            <li
+              key={d.path}
+              className="flex flex-wrap items-center justify-between gap-xs text-body-sm"
+            >
               <span>
                 <span className="font-bold">{frDate(d.created_at)}</span> — {d.excerpt}
               </span>
               <button
                 type="button"
                 className="text-primary underline font-label-sm text-label-sm"
-                onClick={() => downloadAttachment(d.path, d.name).catch((e) => toast.error((e as Error).message))}
+                onClick={() =>
+                  downloadAttachment(d.path, d.name).catch((e) => toast.error((e as Error).message))
+                }
               >
                 Télécharger
               </button>

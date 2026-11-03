@@ -184,7 +184,7 @@ function NewsPage() {
 
   return (
     <AppShell role={role} email={email} eyebrow="Vue d'ensemble" title="Actualités et indicateurs">
-      {email && <DepartureNotices email={email} />}
+      {email && (role === "admin" || role === "manager") && <DepartureNotices email={email} />}
 
       {/* Actualités urgentes non lues */}
       {urgent.length > 0 && (
