@@ -555,6 +555,7 @@ export type Database = {
           team: string | null
           role: Database["public"]["Enums"]["app_role"]
           joined_at: string
+          managed_teams: string[]
         }[]
       }
       bulk_import_allowed_users: {
