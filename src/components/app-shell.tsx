@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { BrandHeader } from "@/components/brand-header";
 import { Icon } from "@/components/icon";
 import { signOut } from "@/lib/auth";
-import { fetchSubmissions } from "@/lib/dashboard";
+import { canModerate, fetchIdeas, fetchMyTeams } from "@/lib/ideas";
 
 const TABS = [
   { to: "/", label: "Actualités et indicateurs", exact: true },
@@ -36,14 +36,27 @@ export function AppShell({
   children: ReactNode;
 }) {
   const canReview = role === "admin" || role === "manager";
-  // Idées en attente de réponse : visibles par les managers (leurs équipes) et les admins.
-  const pending = useQuery({
-    queryKey: ["submissions"],
-    queryFn: fetchSubmissions,
+  // Idées à traiter : en attente pour les équipes du manager, plus les remontées pour un admin.
+  const normEmail = (email ?? "").toLowerCase();
+  const ideas = useQuery({
+    queryKey: ["ideas"],
+    queryFn: fetchIdeas,
     enabled: canReview,
     retry: false,
   });
-  const pendingCount = canReview ? (pending.data?.length ?? 0) : 0;
+  const myTeams = useQuery({
+    queryKey: ["my_teams", normEmail],
+    queryFn: () => fetchMyTeams(normEmail),
+    enabled: canReview && !!normEmail,
+    retry: false,
+  });
+  const pendingCount = canReview
+    ? (ideas.data ?? []).filter(
+        (i) =>
+          canModerate(role ?? "", myTeams.data?.managed ?? [], i) &&
+          (i.status === "en attente" || (role === "admin" && i.status === "remontée")),
+      ).length
+    : 0;
 
   return (
     <div className="bg-background text-on-surface font-body-md min-h-screen flex flex-col">
