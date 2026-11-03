@@ -9,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -35,8 +36,9 @@ type Person = {
   team: string | null;
   role: "admin" | "manager" | "collaborateur";
   joined_at: string;
-  managed_teams: string[];
 };
+
+type TeamManager = { first_name: string; last_name: string; team: string };
 
 const NEW_DAYS = 90;
 const ROLE_LABELS: Record<Person["role"], string> = {
@@ -52,6 +54,13 @@ const frMonthYear = (iso: string) => {
 };
 const isNew = (p: Person) => Date.now() - new Date(p.joined_at).getTime() < NEW_DAYS * 864e5;
 
+async function fetchTeamManagers(): Promise<TeamManager[]> {
+  // Fonction ajoutée après les types générés : client non typé.
+  const { data, error } = await (supabase as unknown as SupabaseClient).rpc("team_managers");
+  if (error) throw error;
+  return (data ?? []) as TeamManager[];
+}
+
 async function fetchDirectory(): Promise<Person[]> {
   const { data, error } = await supabase.rpc("team_directory");
   if (error) throw error;
@@ -63,6 +72,11 @@ function DirectoryPage() {
   const [query, setQuery] = useState("");
   const [team, setTeam] = useState("");
   const [onlyNew, setOnlyNew] = useState(false);
+  const managers = useQuery({
+    queryKey: ["team_managers"],
+    queryFn: fetchTeamManagers,
+    retry: false,
+  });
   const [selected, setSelected] = useState<Person | null>(null);
   const directory = useQuery({
     queryKey: ["team_directory"],
@@ -197,6 +211,7 @@ function DirectoryPage() {
       <PersonDialog
         person={selected}
         directory={directory.data ?? []}
+        managers={managers.data}
         onClose={() => setSelected(null)}
       />
     </AppShell>
@@ -206,17 +221,23 @@ function DirectoryPage() {
 function PersonDialog({
   person,
   directory,
+  managers: allManagers,
   onClose,
 }: {
   person: Person | null;
   directory: Person[];
+  managers: TeamManager[] | undefined;
   onClose: () => void;
 }) {
   const name = (p: Person) => `${p.first_name} ${p.last_name}`;
   const same = (a: Person, b: Person) =>
     a.first_name === b.first_name && a.last_name === b.last_name && a.team === b.team;
   const managers = person?.team
-    ? directory.filter((p) => !same(p, person) && p.managed_teams.includes(person.team as string))
+    ? (allManagers ?? []).filter(
+        (m) =>
+          m.team === person.team &&
+          !(m.first_name === person.first_name && m.last_name === person.last_name),
+      )
     : [];
   const mates = person?.team
     ? directory.filter((p) => !same(p, person) && p.team === person.team)
@@ -239,19 +260,15 @@ function PersonDialog({
                 </dt>
                 <dd className="font-body-md">{frMonthYear(person.joined_at)}</dd>
               </div>
-              {person.managed_teams.length > 0 && (
-                <div>
-                  <dt className="font-label-md text-label-md text-on-surface-variant">MANAGE</dt>
-                  <dd className="font-body-md">{person.managed_teams.join(", ")}</dd>
-                </div>
-              )}
               {person.role !== "admin" && (
                 <div>
                   <dt className="font-label-md text-label-md text-on-surface-variant">
                     MANAGER{managers.length > 1 ? "S" : ""}
                   </dt>
                   <dd className="font-body-md">
-                    {managers.length ? managers.map(name).join(", ") : "Aucun manager renseigné"}
+                    {managers.length
+                      ? managers.map((m) => `${m.first_name} ${m.last_name}`).join(", ")
+                      : "Aucun manager renseigné"}
                   </dd>
                 </div>
               )}
