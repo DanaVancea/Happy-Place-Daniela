@@ -380,7 +380,7 @@ function IdeasPage() {
                     onClick={() => setOpenId(i.id)}
                     className="font-label-sm text-label-sm text-primary underline"
                   >
-                    {i.status === "en débat" ? "PARTICIPER AU DÉBAT" : "LIRE"}
+                    {i.status === "en débat" && inTeam(i) ? "PARTICIPER AU DÉBAT" : "LIRE"}
                   </button>
                 </div>
               </div>
