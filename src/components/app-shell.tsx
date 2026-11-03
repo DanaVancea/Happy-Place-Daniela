@@ -8,7 +8,7 @@ import { canModerate, fetchIdeas, fetchMyTeams } from "@/lib/ideas";
 
 const TABS = [
   { to: "/", label: "Actualités et indicateurs", exact: true },
-  { to: "/idees", label: "Idées", exact: false },
+  { to: "/idees", label: "Boîte à idées", exact: false },
   { to: "/points-bloquants", label: "Points bloquants", exact: false },
   { to: "/trombi", label: "Trombi", exact: false },
 ] as const;

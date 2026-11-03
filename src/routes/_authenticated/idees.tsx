@@ -32,7 +32,7 @@ import {
 export const Route = createFileRoute("/_authenticated/idees")({
   head: () => ({
     meta: [
-      { title: "Happy Place — Idées" },
+      { title: "Happy Place — Boîte à idées" },
       {
         name: "description",
         content:
@@ -232,8 +232,8 @@ function IdeasPage() {
     <AppShell
       role={role}
       email={email}
-      eyebrow="Boîte à idées"
-      title="Idées"
+      eyebrow="Idées par équipe"
+      title="Boîte à idées"
       actions={
         <button
           onClick={openForm}
