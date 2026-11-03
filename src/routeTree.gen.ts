@@ -18,6 +18,7 @@ import { Route as AuthenticatedIdeesRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedManageRouteImport } from './routes/_authenticated/manage'
 import { Route as AuthenticatedPointsBloquantsRouteImport } from './routes/_authenticated/points-bloquants'
 import { Route as AuthenticatedTrombiRouteImport } from './routes/_authenticated/trombi'
+import { Route as AuthenticatedUtilisateursRouteImport } from './routes/_authenticated/utilisateurs'
 import { Route as ApiSuggestionRouteImport } from './routes/api/suggestion'
 import { Route as AuthenticatedManageIndexRouteImport } from './routes/_authenticated/manage.index'
 import { Route as AuthenticatedManageBlockersRouteImport } from './routes/_authenticated/manage.blockers'
@@ -71,6 +72,12 @@ const AuthenticatedTrombiRoute = AuthenticatedTrombiRouteImport.update({
   path: '/trombi',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedUtilisateursRoute =
+  AuthenticatedUtilisateursRouteImport.update({
+    id: '/utilisateurs',
+    path: '/utilisateurs',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const ApiSuggestionRoute = ApiSuggestionRouteImport.update({
   id: '/api/suggestion',
   path: '/api/suggestion',
@@ -121,6 +128,7 @@ export interface FileRoutesByFullPath {
   '/manage': typeof AuthenticatedManageRouteWithChildren
   '/points-bloquants': typeof AuthenticatedPointsBloquantsRoute
   '/trombi': typeof AuthenticatedTrombiRoute
+  '/utilisateurs': typeof AuthenticatedUtilisateursRoute
   '/api/suggestion': typeof ApiSuggestionRoute
   '/manage/blockers': typeof AuthenticatedManageBlockersRoute
   '/manage/metrics': typeof AuthenticatedManageMetricsRoute
@@ -136,6 +144,7 @@ export interface FileRoutesByTo {
   '/idees': typeof AuthenticatedIdeesRoute
   '/points-bloquants': typeof AuthenticatedPointsBloquantsRoute
   '/trombi': typeof AuthenticatedTrombiRoute
+  '/utilisateurs': typeof AuthenticatedUtilisateursRoute
   '/api/suggestion': typeof ApiSuggestionRoute
   '/': typeof AuthenticatedIndexRoute
   '/manage/blockers': typeof AuthenticatedManageBlockersRoute
@@ -155,6 +164,7 @@ export interface FileRoutesById {
   '/_authenticated/manage': typeof AuthenticatedManageRouteWithChildren
   '/_authenticated/points-bloquants': typeof AuthenticatedPointsBloquantsRoute
   '/_authenticated/trombi': typeof AuthenticatedTrombiRoute
+  '/_authenticated/utilisateurs': typeof AuthenticatedUtilisateursRoute
   '/api/suggestion': typeof ApiSuggestionRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/manage/blockers': typeof AuthenticatedManageBlockersRoute
@@ -175,6 +185,7 @@ export interface FileRouteTypes {
     | '/manage'
     | '/points-bloquants'
     | '/trombi'
+    | '/utilisateurs'
     | '/api/suggestion'
     | '/manage/blockers'
     | '/manage/metrics'
@@ -190,6 +201,7 @@ export interface FileRouteTypes {
     | '/idees'
     | '/points-bloquants'
     | '/trombi'
+    | '/utilisateurs'
     | '/api/suggestion'
     | '/'
     | '/manage/blockers'
@@ -208,6 +220,7 @@ export interface FileRouteTypes {
     | '/_authenticated/manage'
     | '/_authenticated/points-bloquants'
     | '/_authenticated/trombi'
+    | '/_authenticated/utilisateurs'
     | '/api/suggestion'
     | '/_authenticated/'
     | '/_authenticated/manage/blockers'
@@ -291,6 +304,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTrombiRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/utilisateurs': {
+      id: '/_authenticated/utilisateurs'
+      path: '/utilisateurs'
+      fullPath: '/utilisateurs'
+      preLoaderRoute: typeof AuthenticatedUtilisateursRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/api/suggestion': {
       id: '/api/suggestion'
       path: '/api/suggestion'
@@ -369,6 +389,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedManageRoute: typeof AuthenticatedManageRouteWithChildren
   AuthenticatedPointsBloquantsRoute: typeof AuthenticatedPointsBloquantsRoute
   AuthenticatedTrombiRoute: typeof AuthenticatedTrombiRoute
+  AuthenticatedUtilisateursRoute: typeof AuthenticatedUtilisateursRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
 
@@ -377,6 +398,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedManageRoute: AuthenticatedManageRouteWithChildren,
   AuthenticatedPointsBloquantsRoute: AuthenticatedPointsBloquantsRoute,
   AuthenticatedTrombiRoute: AuthenticatedTrombiRoute,
+  AuthenticatedUtilisateursRoute: AuthenticatedUtilisateursRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }
 

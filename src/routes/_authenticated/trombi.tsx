@@ -1,8 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  fetchDepartureRequests,
+  fetchMyTeamMembers,
+  frDay,
+  reportDeparture,
+  todayYmd,
+} from "@/lib/users-admin";
 
 export const Route = createFileRoute("/_authenticated/trombi")({
   head: () => ({
@@ -76,6 +84,7 @@ function DirectoryPage() {
 
   return (
     <AppShell role={role} email={email} eyebrow="Annuaire" title="Trombi">
+      {role === "manager" && <ReportDeparture />}
       <div className="flex flex-col md:flex-row gap-sm md:items-end">
         <div className="flex-1 space-y-xs">
           <label
@@ -170,5 +179,102 @@ function DirectoryPage() {
         ))}
       </ul>
     </AppShell>
+  );
+}
+
+/** Un manager signale le départ d'un membre de son équipe : l'admin valide ou refuse la demande. */
+function ReportDeparture() {
+  const qc = useQueryClient();
+  const members = useQuery({
+    queryKey: ["my_team_members"],
+    queryFn: fetchMyTeamMembers,
+    retry: false,
+  });
+  const requests = useQuery({
+    queryKey: ["departure_requests", "mine"],
+    queryFn: fetchDepartureRequests,
+    retry: false,
+  });
+  const [userId, setUserId] = useState("");
+  const [date, setDate] = useState("");
+  const [comment, setComment] = useState("");
+  const send = useMutation({
+    mutationFn: () => reportDeparture(userId, date, comment.trim()),
+    onSuccess: () => {
+      toast.success("Demande envoyée aux admins");
+      setUserId("");
+      setDate("");
+      setComment("");
+      qc.invalidateQueries({ queryKey: ["departure_requests"] });
+    },
+    onError: (e) => toast.error((e as Error).message),
+  });
+  if (members.isError || !members.data?.length) return null;
+  const open = (requests.data ?? []).filter((r) => r.status === "en attente");
+  const decided = (requests.data ?? []).filter((r) => r.status !== "en attente").slice(0, 5);
+  const field =
+    "rounded border border-outline-variant bg-card p-xs font-body-md focus:border-primary focus:outline-none";
+  return (
+    <section className="space-y-sm rounded-lg border border-outline-variant bg-surface-container-lowest p-md">
+      <h2 className="font-label-md text-label-md text-primary">SIGNALER UN DÉPART</h2>
+      <p className="font-body-sm text-on-surface-variant">
+        Un membre de ton équipe quitte l'entreprise ? Les admins valident la demande, puis
+        s'occupent de la suppression de ses données.
+      </p>
+      <form
+        className="flex flex-wrap items-end gap-xs"
+        onSubmit={(e) => {
+          e.preventDefault();
+          send.mutate();
+        }}
+      >
+        <select
+          value={userId}
+          onChange={(e) => setUserId(e.target.value)}
+          aria-label="Membre de l'équipe"
+          className={field}
+        >
+          <option value="">Choisir un membre</option>
+          {members.data.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.first_name} {m.last_name} · {m.team}
+            </option>
+          ))}
+        </select>
+        <input
+          type="date"
+          min={todayYmd()}
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          aria-label="Date de départ"
+          className={field}
+        />
+        <input
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+          placeholder="Commentaire (facultatif)"
+          aria-label="Commentaire"
+          maxLength={500}
+          className={`${field} flex-1 min-w-48`}
+        />
+        <button
+          disabled={!userId || !date || send.isPending}
+          className="bg-primary px-md py-xs font-label-md text-label-md text-on-primary disabled:opacity-50"
+        >
+          {send.isPending ? "…" : "SIGNALER"}
+        </button>
+      </form>
+      {(open.length > 0 || decided.length > 0) && (
+        <ul className="space-y-xs font-body-sm text-on-surface-variant">
+          {[...open, ...decided].map((r) => (
+            <li key={r.id}>
+              {r.user_label} · départ le {frDay(r.departure_date)} ·{" "}
+              <strong className="text-primary">{r.status}</strong>
+              {r.status === "refusée" && r.decision_reason ? ` — motif : ${r.decision_reason}` : ""}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }

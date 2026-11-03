@@ -9,3 +9,6 @@
 - Keep metric delta and value formatting in shared dashboard helpers so management rows and dashboard trends interpret numeric text consistently.
 
 - Version élèves : la connexion est libre et chaque compte choisit son rôle via `public.choisir_mon_role` (écran `/choisir-role`). Ne pas réintroduire de liste blanche : les règles RLS par rôle restent la référence.
+
+- Gestion des utilisateurs (`/utilisateurs`, admins) : un départ programmé ne supprime rien automatiquement (le traitement quotidien ne fait plus que les rappels) ; la suppression passe par `public.supprimer_utilisateur` (efface le profil, les favoris, « Lu » et le compte ; anonymise idées, commentaires et likes en « Ancien collaborateur »). L'export RGPD passe par `public.exporter_donnees_utilisateur`. Les actions admin sensibles sont tracées dans `admin_audit_log` par des déclencheurs : ne pas écrire dans ce journal depuis le navigateur.
+- L'invitation par e-mail passe par la fonction Edge `inviter-utilisateur` (`supabase/functions`) ; sans elle, l'ajout fonctionne en mode test (aucun e-mail envoyé).
