@@ -11,7 +11,7 @@
 --   * actions : une personne responsable (de n'importe quelle équipe), statut prévue / en cours /
 --     faite, échéance obligatoire. Le responsable peut changer le statut de SON action ;
 --   * sujet sensible : seuls les admins le décident ; le point (et ses actions, son historique)
---     n'est alors lisible que par l'équipe choisie, ses managers, et l'admin qui l'a posé.
+--     n'est alors lisible que par les admins et le manager de l'équipe choisie (pas ses autres membres).
 --     Filtrage par RLS : la donnée ne quitte pas la base pour les autres ;
 --   * historique des modifications lisible des admins et managers de l'équipe.
 -- À exécuter ensuite : select * from private.run_smoke_tests();  (tout doit être ok = true)
@@ -35,14 +35,13 @@ RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public, p
   SELECT private.can_review_team(_team)
 $$;
 
--- Lit ce point : tout compte autorisé, sauf sujet sensible (équipe choisie, ses managers, admin auteur).
+-- Lit ce point : tout compte autorisé, sauf sujet sensible (tous les admins et le manager de l'équipe choisie ; pas les autres membres).
 CREATE OR REPLACE FUNCTION private.can_read_blocker(_sensitive_team text, _created_by uuid)
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public, private AS $$
   SELECT private.is_allowed() AND (
     _sensitive_team IS NULL
-    OR lower(coalesce(private.my_team(), '')) = lower(_sensitive_team)
+    OR private.is_admin()
     OR (private.current_app_role() = 'manager'::public.app_role AND private.can_review_team(_sensitive_team))
-    OR (private.is_admin() AND _created_by IS NOT DISTINCT FROM auth.uid() AND _created_by IS NOT NULL)
   )
 $$;
 

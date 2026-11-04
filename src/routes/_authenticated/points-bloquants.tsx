@@ -208,7 +208,7 @@ function BlockersPage() {
 
                 {isAdmin && (
                   <label className="flex flex-wrap items-center gap-xs text-[11px] font-label-sm text-on-surface-variant">
-                    Sujet sensible, visible uniquement par :
+                    Sujet sensible, visible des admins et du manager de l'équipe :
                     <select
                       value={b.sensitive_team ?? ""}
                       onChange={(e) =>
