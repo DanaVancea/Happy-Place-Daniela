@@ -150,3 +150,29 @@ export async function archiveBlocker(id: string) {
     .eq("id", id);
   if (error) throw error;
 }
+
+/** Code couleur des statuts (teintes du design system) : toujours accompagné d'une icône et du libellé. */
+export const BLOCKER_STATUS_META: Record<string, { icon: string; badge: string }> = {
+  OUVERT: { icon: "radio_button_unchecked", badge: "bg-primary text-on-primary border-primary" },
+  "EN COURS": {
+    icon: "autorenew",
+    badge: "bg-secondary-fixed text-on-secondary border-secondary",
+  },
+  SURVEILLANCE: {
+    icon: "visibility",
+    badge: "bg-tertiary-fixed text-on-tertiary-fixed border-on-tertiary-fixed",
+  },
+  RÉSOLU: { icon: "check_circle", badge: "bg-success text-on-primary border-success" },
+};
+
+export const ACTION_STATUS_META: Record<string, { icon: string; badge: string }> = {
+  prévue: {
+    icon: "schedule",
+    badge: "bg-surface-container-highest text-on-surface-variant border-outline",
+  },
+  "en cours": {
+    icon: "autorenew",
+    badge: "bg-secondary-fixed text-on-secondary border-secondary",
+  },
+  faite: { icon: "check_circle", badge: "bg-success text-on-primary border-success" },
+};
