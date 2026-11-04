@@ -111,11 +111,27 @@ function BlockersPage() {
     onError,
   });
 
-  const sorted = [...(blockers.data ?? [])].sort(
-    (a, b) =>
-      severityMeta(a.severity).rank - severityMeta(b.severity).rank ||
-      b.updated_at.localeCompare(a.updated_at),
+  const [sortBy, setSortBy] = useState<"criticite" | "equipe">("criticite");
+  const [filterSeverity, setFilterSeverity] = useState("");
+  const [filterTeam, setFilterTeam] = useState("");
+  const teamsInList = [...new Set((blockers.data ?? []).map((b) => b.department))].sort((x, y) =>
+    x.localeCompare(y, "fr"),
   );
+  const bySeverity = (x: Blocker, y: Blocker) =>
+    severityMeta(x.severity).rank - severityMeta(y.severity).rank;
+  const byTeam = (x: Blocker, y: Blocker) => x.department.localeCompare(y.department, "fr");
+  const sorted = (blockers.data ?? [])
+    .filter(
+      (x) =>
+        (!filterSeverity || x.severity === filterSeverity) &&
+        (!filterTeam || x.department === filterTeam),
+    )
+    .sort(
+      (x, y) =>
+        (sortBy === "equipe"
+          ? byTeam(x, y) || bySeverity(x, y)
+          : bySeverity(x, y) || byTeam(x, y)) || y.updated_at.localeCompare(x.updated_at),
+    );
 
   return (
     <AppShell
@@ -148,8 +164,56 @@ function BlockersPage() {
     >
       <section className="bg-surface-container-lowest border border-outline-variant rounded-lg p-md">
         <div className="space-y-sm">
+          <div className="flex flex-wrap items-end gap-sm">
+            <label className="text-[11px] font-label-sm text-on-surface-variant uppercase">
+              Trier par
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as "criticite" | "equipe")}
+                className="block mt-1 bg-card border border-outline-variant rounded px-xs py-1 text-body-sm normal-case"
+              >
+                <option value="criticite">Criticité</option>
+                <option value="equipe">Équipe concernée</option>
+              </select>
+            </label>
+            <label className="text-[11px] font-label-sm text-on-surface-variant uppercase">
+              Criticité
+              <select
+                value={filterSeverity}
+                onChange={(e) => setFilterSeverity(e.target.value)}
+                className="block mt-1 bg-card border border-outline-variant rounded px-xs py-1 text-body-sm normal-case"
+              >
+                <option value="">Toutes</option>
+                {SEVERITIES.map((v) => (
+                  <option key={v} value={v}>
+                    {severityMeta(v).rank} · {severityMeta(v).label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="text-[11px] font-label-sm text-on-surface-variant uppercase">
+              Équipe concernée
+              <select
+                value={filterTeam}
+                onChange={(e) => setFilterTeam(e.target.value)}
+                className="block mt-1 bg-card border border-outline-variant rounded px-xs py-1 text-body-sm normal-case"
+              >
+                <option value="">Toutes</option>
+                {teamsInList.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
           {blockers.isError && (
             <p className="text-body-sm text-error">Les points bloquants sont indisponibles.</p>
+          )}
+          {blockers.data && blockers.data.length > 0 && sorted.length === 0 && (
+            <p className="text-body-sm text-on-surface-variant italic">
+              Aucun point bloquant ne correspond à ces filtres.
+            </p>
           )}
           {blockers.data?.length === 0 && (
             <p className="text-body-sm text-on-surface-variant italic">
