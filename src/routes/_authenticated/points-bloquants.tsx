@@ -157,7 +157,7 @@ function BlockersPage() {
       }
     >
       <section className="bg-surface-container-lowest border border-outline-variant rounded-lg p-md">
-        <div className="space-y-sm">
+        <div className="space-y-md">
           <div className="flex flex-wrap items-end gap-sm">
             <label className="text-[11px] font-label-sm text-on-surface-variant uppercase">
               Criticité
@@ -210,7 +210,7 @@ function BlockersPage() {
             return (
               <article
                 key={b.id}
-                className={`${b.severity === "critique" ? "accent-bar " : ""}bg-card border border-outline-variant rounded p-sm space-y-sm`}
+                className={`${b.severity === "critique" ? "accent-bar " : ""}bg-card border-2 border-outline rounded p-md space-y-sm shadow-sm`}
               >
                 <div className="flex items-start justify-between gap-sm">
                   <div className="min-w-0">
