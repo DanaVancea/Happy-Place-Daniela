@@ -61,21 +61,25 @@ export async function fetchImpact(days: number): Promise<ImpactData> {
   return data as ImpactData;
 }
 
-export async function submitFeedback(comment: string): Promise<void> {
-  const { error } = await db.rpc("submit_feedback", { _comment: comment });
+export async function submitFeedback(liked: string, improve: string): Promise<void> {
+  const { error } = await db.rpc("submit_feedback", {
+    _liked: liked,
+    _improve: improve,
+  });
   if (error) throw error;
 }
 
 export type FeedbackRow = {
   period: string;
-  comment: string;
+  liked: string | null;
+  improve: string | null;
   team: string | null;
 };
 
 export async function fetchFeedbackRows(): Promise<FeedbackRow[]> {
   const { data, error } = await db
     .from("feedback_responses")
-    .select("period, comment, team")
+    .select("period, liked, improve, team")
     .order("period", { ascending: false });
   if (error) throw error;
   return (data ?? []) as FeedbackRow[];
@@ -89,8 +93,10 @@ function csvCell(v: string | number | null): string {
 }
 
 export function feedbackToCsv(rows: FeedbackRow[]): string {
-  const head = ["Mois", "Avis", "Équipe"];
-  const lines = rows.map((r) => [r.period.slice(0, 7), r.comment, r.team].map(csvCell).join(";"));
+  const head = ["Mois", "Ce que j'aime", "À améliorer", "Équipe"];
+  const lines = rows.map((r) =>
+    [r.period.slice(0, 7), r.liked, r.improve, r.team].map(csvCell).join(";"),
+  );
   // BOM + séparateur « ; » : s'ouvre correctement dans Excel en français.
   return "﻿" + [head.map(csvCell).join(";"), ...lines].join("\r\n");
 }

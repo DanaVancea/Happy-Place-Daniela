@@ -373,7 +373,18 @@ function FeedbackList() {
     <ul className="max-h-96 space-y-xs overflow-y-auto">
       {rows.map((r, i) => (
         <li key={i} className="border border-outline-variant bg-surface-container-lowest p-sm">
-          <p className="font-body-md whitespace-pre-line wrap-anywhere">{r.comment}</p>
+          {r.liked && (
+            <p className="whitespace-pre-line font-body-md wrap-anywhere">
+              <span className="font-bold text-primary">J'aime : </span>
+              {r.liked}
+            </p>
+          )}
+          {r.improve && (
+            <p className="whitespace-pre-line font-body-md wrap-anywhere">
+              <span className="font-bold text-primary">À améliorer : </span>
+              {r.improve}
+            </p>
+          )}
           <p className="font-label-sm text-label-sm text-on-surface-variant">
             {monthLabel(r.period)}
             {r.team ? ` · ${r.team}` : ""}

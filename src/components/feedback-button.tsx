@@ -5,17 +5,20 @@ import { toast } from "sonner";
 import { Icon } from "@/components/icon";
 import { submitFeedback } from "@/lib/impact";
 
-/** Bouton « Donner mon avis », fixé en bas à droite : texte libre (avis, suggestion), anonyme. */
+/** Bouton « Donner mon avis », fixé en bas à droite : deux champs libres (ce qui plaît, ce qui peut s'améliorer), anonyme. */
 export function FeedbackButton() {
   const [open, setOpen] = useState(false);
-  const [comment, setComment] = useState("");
+  const [liked, setLiked] = useState("");
+  const [improve, setImprove] = useState("");
+  const filled = (t: string) => t.trim().length >= 3;
 
   const send = useMutation({
-    mutationFn: () => submitFeedback(comment),
+    mutationFn: () => submitFeedback(liked, improve),
     onSuccess: () => {
       toast.success("Merci pour ton avis !");
       setOpen(false);
-      setComment("");
+      setLiked("");
+      setImprove("");
     },
     onError: (e) => toast.error((e as Error).message),
   });
@@ -36,10 +39,10 @@ export function FeedbackButton() {
           <div className="flex items-start justify-between gap-sm">
             <div>
               <DialogPrimitive.Title className="font-headline-sm text-headline-sm text-primary">
-                Donne ton avis
+                Aide-nous à améliorer Happy Place
               </DialogPrimitive.Title>
               <DialogPrimitive.Description className="font-label-sm text-label-sm text-on-surface-variant">
-                Anonyme : ton nom n'est jamais associé à ta réponse.
+                Anonyme : ton nom n'est jamais associé à ta réponse. Un seul champ suffit.
               </DialogPrimitive.Description>
             </div>
             <DialogPrimitive.Close
@@ -49,17 +52,28 @@ export function FeedbackButton() {
               <Icon name="close" />
             </DialogPrimitive.Close>
           </div>
-          <label className="block space-y-xs">
+          <label className="block space-y-xs border border-outline-variant bg-card p-sm">
+            <span className="font-body-md font-bold text-primary">Qu'est-ce que tu aimes ?</span>
+            <textarea
+              value={liked}
+              onChange={(e) => setLiked(e.target.value)}
+              maxLength={1000}
+              rows={3}
+              className="w-full border border-outline-variant bg-surface-container-lowest p-xs font-body-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              placeholder="Ce qui t'aide, ce qui te plaît…"
+            />
+          </label>
+          <label className="block space-y-xs border border-outline-variant bg-card p-sm">
             <span className="font-body-md font-bold text-primary">
-              Qu'est-ce qui t'aiderait, ou qu'est-ce qui ne va pas ?
+              Qu'est-ce que nous pouvons améliorer ?
             </span>
             <textarea
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
+              value={improve}
+              onChange={(e) => setImprove(e.target.value)}
               maxLength={1000}
-              rows={5}
-              className="w-full border border-outline-variant bg-card p-xs font-body-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-              placeholder="Ton avis, une idée, une suggestion, un souci…"
+              rows={3}
+              className="w-full border border-outline-variant bg-surface-container-lowest p-xs font-body-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              placeholder="Une idée, une suggestion, un souci…"
             />
           </label>
           <div className="flex justify-end gap-xs">
@@ -68,7 +82,7 @@ export function FeedbackButton() {
             </DialogPrimitive.Close>
             <button
               type="button"
-              disabled={comment.trim().length < 3 || send.isPending}
+              disabled={(!filled(liked) && !filled(improve)) || send.isPending}
               onClick={() => send.mutate()}
               className="rounded border border-primary bg-primary px-md py-xs font-label-md text-label-md text-on-primary hover:opacity-90 disabled:opacity-50"
             >
