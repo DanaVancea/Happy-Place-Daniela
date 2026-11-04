@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { createFileRoute, isRedirect, Outlet, redirect, useLocation } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchOwnRole } from "@/lib/auth";
+import { OnboardingTour } from "@/components/onboarding-tour";
 import { trackPageView, trackedPageOf } from "@/lib/impact";
 
 // Version élèves : un compte connecté sans rôle est envoyé vers /choisir-role
@@ -33,5 +34,11 @@ function AuthenticatedLayout() {
     const page = trackedPageOf(pathname);
     if (page) void trackPageView(page);
   }, [pathname]);
-  return <Outlet />;
+  const { user, role } = Route.useRouteContext();
+  return (
+    <>
+      <Outlet />
+      <OnboardingTour userId={user.id} role={role} />
+    </>
+  );
 }
