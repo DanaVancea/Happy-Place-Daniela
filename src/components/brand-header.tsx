@@ -7,17 +7,27 @@ export function BrandHeader() {
   // Version élèves : lien « Changer de rôle » visible dès qu'on est connecté.
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [signedIn, setSignedIn] = useState(false);
+  // Seuls les profils de test (sans e-mail) changent de rôle ; un vrai compte garde le rôle donné par l'admin.
+  const [canChangeRole, setCanChangeRole] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setSignedIn(!!data.session));
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => setSignedIn(!!session));
+    const apply = (session: { user: { is_anonymous?: boolean } } | null) => {
+      setSignedIn(!!session);
+      setCanChangeRole(!!session?.user.is_anonymous);
+    };
+    supabase.auth.getSession().then(({ data }) => apply(data.session));
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => apply(session));
     return () => sub.subscription.unsubscribe();
   }, []);
 
   return (
     <header className="border-b border-outline-variant bg-surface-container-lowest">
       <div className="mx-auto flex min-h-16 w-full max-w-interface items-center justify-between gap-md px-sm py-xs md:px-md">
-        <Link to="/" className="flex min-w-0 items-center gap-sm" aria-label="Bigger Boat — accueil">
+        <Link
+          to="/"
+          className="flex min-w-0 items-center gap-sm"
+          aria-label="Bigger Boat — accueil"
+        >
           <img
             src={sharkLogo}
             alt=""
@@ -25,10 +35,12 @@ export function BrandHeader() {
             height={1024}
             className="h-11 w-14 shrink-0 object-contain"
           />
-          <span className="font-label-md text-lg font-bold uppercase text-primary">Bigger Boat</span>
+          <span className="font-label-md text-lg font-bold uppercase text-primary">
+            Bigger Boat
+          </span>
         </Link>
         <div className="flex items-center gap-md">
-          {signedIn && pathname !== "/choisir-role" && (
+          {signedIn && canChangeRole && pathname !== "/choisir-role" && (
             <Link
               to="/choisir-role"
               className="font-label-sm text-label-sm uppercase text-primary underline-offset-2 hover:underline"
@@ -36,7 +48,9 @@ export function BrandHeader() {
               Changer de rôle
             </Link>
           )}
-          <span className="font-label-sm text-label-sm uppercase text-on-surface-variant">Happy Place</span>
+          <span className="font-label-sm text-label-sm uppercase text-on-surface-variant">
+            Happy Place
+          </span>
         </div>
       </div>
     </header>

@@ -14,7 +14,13 @@ export const Route = createFileRoute("/choisir-role")({
   beforeLoad: async () => {
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) throw redirect({ to: "/auth" });
-    return { email: data.user.email ?? "" };
+    const email = data.user.email ?? "";
+    // Compte avec une vraie adresse : le rôle a été défini par l'admin, il n'y a rien à choisir.
+    if (!data.user.is_anonymous) {
+      if (email && (await fetchOwnRole(email))) throw redirect({ to: "/" });
+      return { email, verrouille: true };
+    }
+    return { email, verrouille: false };
   },
   component: ChoisirRolePage,
 });
@@ -40,7 +46,7 @@ const ROLES: { value: AppRole; label: string; description: string }[] = [
 ];
 
 function ChoisirRolePage() {
-  const { email } = Route.useRouteContext();
+  const { email, verrouille } = Route.useRouteContext();
   const [teams, setTeams] = useState<string[]>([]);
   const [current, setCurrent] = useState<AppRole | null>(null);
   const [role, setRole] = useState<AppRole>("collaborateur");
@@ -136,6 +142,30 @@ function ChoisirRolePage() {
   const inputCls =
     "mt-xs h-11 w-full border border-outline-variant bg-background px-sm font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary";
   const labelCls = "block font-label-sm text-label-sm uppercase text-on-surface-variant";
+
+  if (verrouille) {
+    return (
+      <div className="min-h-dvh w-full bg-background flex flex-col">
+        <BrandHeader />
+        <main className="flex flex-1 items-center justify-center px-md py-lg">
+          <section className="w-[min(100%,28rem)] border border-outline-variant bg-surface-container-lowest p-lg shadow-sm">
+            <h1 className="font-headline-lg text-headline-lg text-primary">Rôle en attente</h1>
+            <p className="mt-sm font-body-md text-body-md text-on-surface-variant">
+              Ton compte ({email}) n'a pas encore de rôle. Demande à un admin de t'en attribuer un
+              dans « Gestion des utilisateurs », puis reconnecte-toi.
+            </p>
+            <Button
+              variant="outline"
+              onClick={signOut}
+              className="mt-md h-12 w-full rounded-none font-label-md text-xs uppercase"
+            >
+              SE DÉCONNECTER
+            </Button>
+          </section>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-dvh w-full bg-background flex flex-col">
