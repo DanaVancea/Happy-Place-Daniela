@@ -1,10 +1,11 @@
-// Fonction Edge « email-bienvenue » : envoie un e-mail de bienvenue (via Resend) dès qu'un
+// Fonction Edge « email-bienvenue » : envoie un e-mail de bienvenue (via Brevo ou Resend) dès qu'un
 // compte de connexion est créé. Elle est appelée par un webhook de base de données
 // (trigger sur auth.users, voir la migration 20261104090000_email_bienvenue.sql).
 //
 // Secrets à définir (Supabase > Edge Functions > Secrets, ou `supabase secrets set ...`) :
-//   RESEND_API_KEY   clé API Resend
-//   MAIL_FROM        expéditeur, ex. « Happy Place <bienvenue@ton-domaine.fr> »
+//   BREVO_API_KEY    clé API Brevo (recommandé sans domaine : expéditeur = adresse confirmée dans Brevo)
+//   RESEND_API_KEY   clé API Resend (utilisée seulement si BREVO_API_KEY est absent ; domaine vérifié requis)
+//   MAIL_FROM        expéditeur, ex. « Happy Place <ton.adresse@gmail.com> » (adresse confirmée chez Brevo)
 //   WEBHOOK_SECRET   mot de passe partagé avec le trigger (même valeur que dans la migration)
 //   SITE_URL         (facultatif) adresse du site, par défaut celle de production
 //
@@ -60,6 +61,12 @@ Ton compte est prêt. Happy Place est l'intranet de Bigger Boat : voici deux end
   return { html, texte };
 }
 
+// « Happy Place <adresse@exemple.fr> » -> { name, email }
+function expediteur(from: string) {
+  const m = from.match(/^\s*(?:"?([^"<]*?)"?\s*)?<([^>]+)>\s*$/);
+  return m ? { name: (m[1] || "Happy Place").trim(), email: m[2].trim() } : { name: "Happy Place", email: from.trim() };
+}
+
 Deno.serve(async (req) => {
   if (req.method !== "POST") return new Response("Méthode non autorisée", { status: 405 });
   if (req.headers.get("x-webhook-secret") !== Deno.env.get("WEBHOOK_SECRET") || !Deno.env.get("WEBHOOK_SECRET")) {
@@ -77,19 +84,31 @@ Deno.serve(async (req) => {
   prenom = (data as { first_name?: string | null } | null)?.first_name?.trim() || null;
 
   const { html, texte } = gabarit(prenom);
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${Deno.env.get("RESEND_API_KEY")}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      from: Deno.env.get("MAIL_FROM"),
-      to: [email],
-      subject: "Bienvenue sur Happy Place",
-      html,
-      text: texte,
-    }),
-  });
+  const subject = "Bienvenue sur Happy Place";
+  const from = Deno.env.get("MAIL_FROM") ?? "";
+  const brevoKey = Deno.env.get("BREVO_API_KEY");
+
+  // Brevo (si BREVO_API_KEY est défini) : l'expéditeur est une adresse confirmée, sans domaine à soi.
+  // Sinon Resend (qui exige un domaine vérifié pour écrire à d'autres que soi).
+  const res = brevoKey
+    ? await fetch("https://api.brevo.com/v3/smtp/email", {
+        method: "POST",
+        headers: { "api-key": brevoKey, "Content-Type": "application/json", accept: "application/json" },
+        body: JSON.stringify({
+          sender: expediteur(from),
+          to: [{ email }],
+          subject,
+          htmlContent: html,
+          textContent: texte,
+        }),
+      })
+    : await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${Deno.env.get("RESEND_API_KEY")}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ from, to: [email], subject, html, text: texte }),
+      });
   if (!res.ok) {
-    console.error("Resend a refusé l'envoi", res.status, await res.text());
+    console.error("Le fournisseur d'e-mail a refusé l'envoi", brevoKey ? "(Brevo)" : "(Resend)", res.status, await res.text());
     return new Response("Échec de l'envoi", { status: 502 });
   }
   return new Response("ok", { status: 200 });
