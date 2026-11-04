@@ -41,6 +41,7 @@ export function BlockerArchive({ open, onClose }: { open: boolean; onClose: () =
                 )}
                 <div className="flex flex-wrap items-center gap-sm mt-xs text-[11px] font-label-sm">
                   <span className="bg-surface-container-highest px-xs py-0.5">{b.department}</span>
+                  <span className="text-on-surface-variant">Statut : {b.status}</span>
                   <span className="text-on-surface-variant">Criticité : {severityMeta(b.severity).label}</span>
                   <span className="text-on-surface-variant">Mis à jour le {formatExactDate(b.updated_at)}</span>
                 </div>
