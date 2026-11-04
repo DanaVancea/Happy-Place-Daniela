@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { BrandHeader } from "@/components/brand-header";
 import { Button } from "@/components/ui/button";
@@ -56,6 +57,25 @@ function EntreePage() {
       return;
     }
     setBusy(true);
+    // Seules les adresses déjà dans la liste des utilisateurs peuvent se connecter par e-mail.
+    const { data: dansLaListe, error: listErr } = await (supabase as unknown as SupabaseClient).rpc(
+      "email_dans_la_liste",
+      {
+        _email: addr,
+      },
+    );
+    if (listErr) {
+      setBusy(false);
+      setError(`Impossible de vérifier l'adresse : ${listErr.message}`);
+      return;
+    }
+    if (!dansLaListe) {
+      setBusy(false);
+      setError(
+        "Cette adresse n'est pas dans la liste des utilisateurs. Demande à un admin de t'ajouter.",
+      );
+      return;
+    }
     const { error: err } = await supabase.auth.signInWithOtp({
       email: addr,
       options: { emailRedirectTo: `${window.location.origin}/auth` },
