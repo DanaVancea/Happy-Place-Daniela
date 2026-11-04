@@ -554,9 +554,11 @@ function NewsPage() {
                       <button
                         type="button"
                         className="font-label-sm text-label-sm text-error"
-                        disabled={remove.isPending}
+                        disabled={archive.isPending}
                         onClick={() =>
-                          window.confirm(`Supprimer « ${n.title} » ?`) && remove.mutate(n)
+                          window.confirm(
+                            `Supprimer « ${n.title} » ? Elle ira dans les actualités archivées.`,
+                          ) && archive.mutate({ id: n.id, archived: true })
                         }
                       >
                         Supprimer
@@ -613,23 +615,15 @@ function NewsPage() {
                       <button
                         type="button"
                         className="font-label-sm text-label-sm text-error"
-                        disabled={remove.isPending}
+                        disabled={archive.isPending}
                         onClick={() =>
-                          window.confirm(`Supprimer « ${n.title} » ?`) && remove.mutate(n)
+                          window.confirm(
+                            `Supprimer « ${n.title} » ? Elle ira dans les actualités archivées.`,
+                          ) && archive.mutate({ id: n.id, archived: true })
                         }
                       >
                         Supprimer
                       </button>
-                      {!isScheduled(n) && n.status === "publiée" && (
-                        <button
-                          type="button"
-                          className="font-label-sm text-label-sm text-on-surface-variant hover:text-primary"
-                          disabled={archive.isPending}
-                          onClick={() => archive.mutate({ id: n.id, archived: true })}
-                        >
-                          Archiver
-                        </button>
-                      )}
                       {n.status === "brouillon" && (
                         <button
                           type="button"
@@ -685,7 +679,7 @@ function NewsPage() {
                           window.confirm(`Supprimer définitivement « ${n.title} » ?`) && remove.mutate(n)
                         }
                       >
-                        Supprimer
+                        Supprimer définitivement
                       </button>
                     </div>
                   </div>
