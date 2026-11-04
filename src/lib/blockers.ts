@@ -121,6 +121,8 @@ export async function updateBlockerSettings(input: {
   id: string;
   severity?: Severity;
   sensitive_team?: string | null;
+  owner_email?: string | null;
+  owner_name?: string | null;
 }) {
   const { id, ...patch } = input;
   const { error } = await db

@@ -115,6 +115,8 @@ export type Database = {
           sensitive_team: string | null
           resolved_at: string | null
           archived_at: string | null
+          owner_email: string | null
+          owner_name: string | null
           department: string
           description: string | null
           id: string
@@ -129,6 +131,8 @@ export type Database = {
           sensitive_team?: string | null
           resolved_at?: string | null
           archived_at?: string | null
+          owner_email?: string | null
+          owner_name?: string | null
           department?: string
           description?: string | null
           id?: string
@@ -143,6 +147,8 @@ export type Database = {
           sensitive_team?: string | null
           resolved_at?: string | null
           archived_at?: string | null
+          owner_email?: string | null
+          owner_name?: string | null
           department?: string
           description?: string | null
           id?: string
