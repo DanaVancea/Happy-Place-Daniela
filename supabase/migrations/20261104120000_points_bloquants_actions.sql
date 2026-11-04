@@ -34,7 +34,7 @@ ALTER TABLE public.blockers ALTER COLUMN severity SET DEFAULT 'moyenne'::public.
 
 -- 2. Colonnes : sujet sensible, auteur ----------------------------------------
 ALTER TABLE public.blockers
-  ADD COLUMN IF NOT EXISTS sensitive_team text REFERENCES public.teams(name) ON UPDATE CASCADE ON DELETE RESTRICT,
+  ADD COLUMN IF NOT EXISTS sensitive_team text,
   ADD COLUMN IF NOT EXISTS created_by uuid DEFAULT auth.uid();
 
 -- 3. Fonctions de droits ------------------------------------------------------
