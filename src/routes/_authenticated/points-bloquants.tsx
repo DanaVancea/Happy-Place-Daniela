@@ -15,6 +15,8 @@ import {
 import { fetchMyTeams, fetchTeams } from "@/lib/ideas";
 import {
   ACTION_STATUSES,
+  ACTION_STATUS_META,
+  BLOCKER_STATUS_META,
   archiveBlocker,
   SEVERITIES,
   canEditBlocker,
@@ -264,12 +266,13 @@ function BlockersPage() {
                         aria-label={`Statut de ${b.title}`}
                         value={b.status}
                         onChange={(e) => setBlocker.mutate({ id: b.id, status: e.target.value })}
-                        className="bg-card border-2 border-outline rounded px-sm py-xs text-body-md font-label-md font-bold text-primary cursor-pointer"
+                        className={`border-2 rounded px-sm py-xs text-body-md font-label-md font-bold cursor-pointer ${BLOCKER_STATUS_META[b.status]?.badge ?? ""}`}
                       >
-                        <option>OUVERT</option>
-                        <option>EN COURS</option>
-                        <option>SURVEILLANCE</option>
+                        <option className="bg-card text-primary">OUVERT</option>
+                        <option className="bg-card text-primary">EN COURS</option>
+                        <option className="bg-card text-primary">SURVEILLANCE</option>
                         <option
+                          className="bg-card text-primary"
                           disabled={b.status === "OUVERT"}
                           title={b.status === "OUVERT" ? "Passe d'abord par EN COURS" : undefined}
                         >
@@ -277,7 +280,13 @@ function BlockersPage() {
                         </option>
                       </select>
                     ) : (
-                      <span className="rounded border-2 border-outline px-sm py-xs text-body-md font-label-md font-bold text-primary">
+                      <span
+                        className={`inline-flex items-center gap-1 rounded border-2 px-sm py-xs text-body-md font-label-md font-bold ${BLOCKER_STATUS_META[b.status]?.badge ?? ""}`}
+                      >
+                        <Icon
+                          name={BLOCKER_STATUS_META[b.status]?.icon ?? "help"}
+                          className="text-[18px]"
+                        />
                         {b.status}
                       </span>
                     )}
@@ -415,16 +424,20 @@ function ActionRow({
             aria-label={`Statut de l'action ${a.title}`}
             value={a.status}
             onChange={(e) => onStatus(e.target.value as ActionStatus)}
-            className="bg-transparent border border-outline-variant rounded text-xs font-label-sm"
+            className={`border rounded px-xs py-0.5 text-xs font-label-sm ${ACTION_STATUS_META[a.status]?.badge ?? ""}`}
           >
             {ACTION_STATUSES.map((s) => (
-              <option key={s} value={s}>
+              <option key={s} value={s} className="bg-card text-primary">
                 {s}
               </option>
             ))}
           </select>
         ) : (
-          <span className="text-xs font-label-sm text-on-surface-variant">{a.status}</span>
+          <span
+            className={`inline-flex items-center gap-1 rounded border px-xs py-0.5 text-xs font-label-sm ${ACTION_STATUS_META[a.status]?.badge ?? ""}`}
+          >
+            {a.status}
+          </span>
         )}
         {canEdit && (
           <button
