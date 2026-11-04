@@ -73,7 +73,7 @@ function ManageBlockers() {
 
   const save = useMutation({
     mutationFn: (input: BlockerInput) =>
-      editing ? updateBlocker(editing.id, input) : createBlocker(input),
+      editing ? updateBlocker(editing.id, input) : createBlocker(input).then(() => undefined),
     onSuccess: () => {
       toast.success(editing ? "Point bloquant modifié" : "Point bloquant créé");
       close();

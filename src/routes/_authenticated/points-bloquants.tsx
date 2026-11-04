@@ -576,8 +576,31 @@ function NewBlockerModal({
   const [severity, setSeverity] = useState<string>("moyenne");
   const [isPrivate, setIsPrivate] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const users = useQuery({
+    queryKey: ["assignable-users"],
+    queryFn: fetchAssignableUsers,
+    retry: false,
+  });
+  type Draft = { title: string; owner: string; due: string };
+  const [drafts, setDrafts] = useState<Draft[]>([]);
+  const patchDraft = (i: number, patch: Partial<Draft>) =>
+    setDrafts(drafts.map((d, k) => (k === i ? { ...d, ...patch } : d)));
   const create = useMutation({
-    mutationFn: createBlocker,
+    mutationFn: async (input: Parameters<typeof createBlocker>[0]) => {
+      const id = await createBlocker(input);
+      for (const d of drafts) {
+        const person = users.data?.find((u) => u.email === d.owner);
+        if (!person) continue;
+        await createBlockerAction({
+          blocker_id: id,
+          title: d.title.trim(),
+          owner_email: person.email,
+          owner_name: person.name,
+          due_date: d.due,
+          status: "prévue",
+        });
+      }
+    },
     onSuccess: () => {
       toast.success("Point bloquant créé");
       onCreated();
@@ -589,6 +612,12 @@ function NewBlockerModal({
     e.preventDefault();
     if (title.trim().length < 3) return setError("Le titre doit faire au moins 3 caractères.");
     if (!department) return setError("Choisis l'équipe concernée.");
+    for (const [i, d] of drafts.entries()) {
+      if (d.title.trim().length < 3)
+        return setError(`Action ${i + 1} : décris l'action (3 caractères minimum).`);
+      if (!d.owner) return setError(`Action ${i + 1} : choisis la personne responsable.`);
+      if (!d.due) return setError(`Action ${i + 1} : la date d'échéance est obligatoire.`);
+    }
     setError(null);
     create.mutate({
       title: title.trim(),
@@ -649,6 +678,60 @@ function NewBlockerModal({
             </Select>
           </Field>
         )}
+        <div className="space-y-xs border-t border-outline-variant pt-sm">
+          <div className="flex items-center justify-between gap-sm">
+            <span className="font-label-sm text-label-sm text-on-surface-variant uppercase">
+              Actions ({drafts.length})
+            </span>
+            <button
+              type="button"
+              onClick={() => setDrafts([...drafts, { title: "", owner: "", due: "" }])}
+              className="px-sm py-0.5 border border-primary text-primary font-label-sm text-label-sm hover:bg-surface-container"
+            >
+              + AJOUTER UNE ACTION
+            </button>
+          </div>
+          {drafts.map((d, i) => (
+            <div key={i} className="space-y-xs border border-outline-variant p-xs">
+              <TextInput
+                aria-label={`Action ${i + 1}`}
+                placeholder="Action à mener"
+                value={d.title}
+                maxLength={200}
+                onChange={(e) => patchDraft(i, { title: e.target.value })}
+              />
+              <Select
+                aria-label={`Responsable de l'action ${i + 1}`}
+                value={d.owner}
+                onChange={(e) => patchDraft(i, { owner: e.target.value })}
+              >
+                <option value="">Responsable…</option>
+                {(users.data ?? []).map((u) => (
+                  <option key={u.email} value={u.email}>
+                    {u.name}
+                    {u.team ? ` — ${u.team}` : ""}
+                  </option>
+                ))}
+              </Select>
+              <div className="flex gap-xs">
+                <TextInput
+                  type="date"
+                  aria-label={`Échéance de l'action ${i + 1}`}
+                  value={d.due}
+                  onChange={(e) => patchDraft(i, { due: e.target.value })}
+                />
+                <button
+                  type="button"
+                  aria-label={`Retirer l'action ${i + 1}`}
+                  onClick={() => setDrafts(drafts.filter((_, k) => k !== i))}
+                  className="px-sm text-on-surface-variant hover:text-error"
+                >
+                  <Icon name="delete" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
         <FormActions pending={create.isPending} onCancel={onClose} submitLabel="CRÉER" />
       </form>
     </Modal>

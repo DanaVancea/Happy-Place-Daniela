@@ -487,11 +487,14 @@ export async function fetchAllBlockers(): Promise<Blocker[]> {
   return (data ?? []) as Blocker[];
 }
 
-export async function createBlocker(input: BlockerInput) {
-  const { error } = await db
+export async function createBlocker(input: BlockerInput): Promise<string> {
+  const { data, error } = await db
     .from("blockers")
-    .insert({ ...input, severity: input.severity as Enums["blocker_severity"], status: input.status as Enums["blocker_status"], updated_at: new Date().toISOString() });
+    .insert({ ...input, severity: input.severity as Enums["blocker_severity"], status: input.status as Enums["blocker_status"], updated_at: new Date().toISOString() })
+    .select("id")
+    .single();
   if (error) throw error;
+  return data.id;
 }
 
 export async function updateBlocker(id: string, input: BlockerInput) {
