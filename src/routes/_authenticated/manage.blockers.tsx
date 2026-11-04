@@ -13,6 +13,8 @@ import {
   TextArea,
   TextInput,
 } from "@/components/manage/crud-ui";
+import { SEVERITIES, severityMeta } from "@/lib/blockers";
+import { fetchTeams } from "@/lib/ideas";
 import { blockerSchema, validate, type FieldErrors } from "@/lib/manage-schemas";
 import {
   createBlocker,
@@ -38,18 +40,17 @@ export const Route = createFileRoute("/_authenticated/manage/blockers")({
   component: ManageBlockers,
 });
 
-const severityLabels: Record<string, string> = {
-  critical: "Critique",
-  warning: "Avertissement",
-  info: "Information",
-};
+const severityLabels: Record<string, string> = Object.fromEntries(
+  SEVERITIES.map((v) => [v, `${severityMeta(v).rank} · ${severityMeta(v).label}`]),
+);
 
 const empty: BlockerInput = {
   title: "",
   description: "",
   department: "",
-  severity: "warning",
-  status: "EN COURS",
+  severity: "moyenne",
+  status: "OUVERT",
+  sensitive_team: null,
 };
 
 function ManageBlockers() {
@@ -59,6 +60,7 @@ function ManageBlockers() {
   const [errors, setErrors] = useState<FieldErrors>({});
   const [toDelete, setToDelete] = useState<Blocker | null>(null);
 
+  const teams = useQuery({ queryKey: ["teams"], queryFn: fetchTeams, retry: false });
   const list = useQuery({ queryKey: ["blockers", "all"], queryFn: fetchAllBlockers, retry: false });
   const invalidate = () => qc.invalidateQueries({ queryKey: ["blockers"] });
   const onError = (e: unknown) => toast.error((e as Error).message);
@@ -148,6 +150,7 @@ function ManageBlockers() {
                   department: b.department,
                   severity: b.severity,
                   status: b.status,
+                  sensitive_team: b.sensitive_team ?? null,
                 });
               }}
               onDelete={() => setToDelete(b)}
@@ -181,22 +184,32 @@ function ManageBlockers() {
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
               />
             </Field>
-            <Field label="Pôle concerné" error={errors.department}>
-              <TextInput
+            <Field label="Équipe concernée" error={errors.department}>
+              <Select
                 value={form.department}
-                maxLength={60}
-                placeholder="Ex. Data & IA"
                 onChange={(e) => setForm({ ...form, department: e.target.value })}
-              />
+              >
+                <option value="">Choisir une équipe…</option>
+                {form.department && !teams.data?.includes(form.department) && (
+                  <option value={form.department}>{form.department}</option>
+                )}
+                {(teams.data ?? []).map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </Select>
             </Field>
-            <Field label="Sévérité" error={errors.severity}>
+            <Field label="Criticité" error={errors.severity}>
               <Select
                 value={form.severity}
                 onChange={(e) => setForm({ ...form, severity: e.target.value })}
               >
-                <option value="critical">Critique</option>
-                <option value="warning">Avertissement</option>
-                <option value="info">Information</option>
+                {SEVERITIES.map((v) => (
+                  <option key={v} value={v}>
+                    {severityLabels[v]}
+                  </option>
+                ))}
               </Select>
             </Field>
             <Field label="Statut" error={errors.status}>
@@ -216,6 +229,19 @@ function ManageBlockers() {
                     RÉSOLU
                   </option>
                 )}
+              </Select>
+            </Field>
+            <Field label="Sujet sensible : visible uniquement par" error={errors.sensitive_team}>
+              <Select
+                value={form.sensitive_team ?? ""}
+                onChange={(e) => setForm({ ...form, sensitive_team: e.target.value || null })}
+              >
+                <option value="">Non sensible (visible de tous)</option>
+                {(teams.data ?? []).map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
               </Select>
             </Field>
             <FormActions pending={save.isPending} onCancel={close} />

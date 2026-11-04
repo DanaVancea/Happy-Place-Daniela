@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AttachmentLink } from "@/components/attachment-link";
 import { SubmissionPreview, formatExactDate } from "@/components/expandable-card";
+import { severityMeta } from "@/lib/blockers";
 import { fetchResolvedBlockers, fetchValidatedSubmissions, type Submission } from "@/lib/dashboard";
 
 /** Fenêtre « Archive des points bloquants » (lecture seule, statut RÉSOLU). */
@@ -40,7 +41,7 @@ export function BlockerArchive({ open, onClose }: { open: boolean; onClose: () =
                 )}
                 <div className="flex flex-wrap items-center gap-sm mt-xs text-[11px] font-label-sm">
                   <span className="bg-surface-container-highest px-xs py-0.5">{b.department}</span>
-                  <span className="text-on-surface-variant">Sévérité : {b.severity}</span>
+                  <span className="text-on-surface-variant">Criticité : {severityMeta(b.severity).label}</span>
                   <span className="text-on-surface-variant">Mis à jour le {formatExactDate(b.updated_at)}</span>
                 </div>
               </div>
