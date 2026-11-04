@@ -341,7 +341,10 @@ function Content({
         hint="Texte libre, anonyme : aucun nom n'est associé à un avis"
       >
         <Bars
-          rows={d.feedback.monthly.map((m) => ({ label: monthLabel(m.start), value: m.count }))}
+          rows={[...d.feedback.monthly]
+            .reverse()
+            .filter((m) => m.count > 0)
+            .map((m) => ({ label: monthLabel(m.start), value: m.count }))}
         />
         <FeedbackList />
         <div>
