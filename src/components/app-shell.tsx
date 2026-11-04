@@ -143,14 +143,6 @@ export function AppShell({
               {email} · {ROLE_LABELS[role ?? ""] ?? ""}
             </span>
             {actions}
-            {role === "admin" && (
-              <Link
-                to="/manage/news"
-                className="flex items-center gap-xs rounded px-md py-xs border border-primary bg-transparent text-primary font-label-md text-label-md hover:bg-surface-container"
-              >
-                <Icon name="database" /> GÉRER LES DONNÉES
-              </Link>
-            )}
             <button
               onClick={() => signOut()}
               className="flex items-center gap-xs rounded px-md py-xs border border-primary bg-transparent text-primary font-label-md text-label-md hover:bg-surface-container"

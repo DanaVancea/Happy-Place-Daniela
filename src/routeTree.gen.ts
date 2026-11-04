@@ -15,17 +15,10 @@ import { Route as ChoisirRoleRouteImport } from './routes/choisir-role'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedIdeesRouteImport } from './routes/_authenticated/idees'
-import { Route as AuthenticatedManageRouteImport } from './routes/_authenticated/manage'
 import { Route as AuthenticatedPointsBloquantsRouteImport } from './routes/_authenticated/points-bloquants'
 import { Route as AuthenticatedTrombiRouteImport } from './routes/_authenticated/trombi'
 import { Route as AuthenticatedUtilisateursRouteImport } from './routes/_authenticated/utilisateurs'
 import { Route as ApiSuggestionRouteImport } from './routes/api/suggestion'
-import { Route as AuthenticatedManageIndexRouteImport } from './routes/_authenticated/manage.index'
-import { Route as AuthenticatedManageBlockersRouteImport } from './routes/_authenticated/manage.blockers'
-import { Route as AuthenticatedManageMetricsRouteImport } from './routes/_authenticated/manage.metrics'
-import { Route as AuthenticatedManageNewsRouteImport } from './routes/_authenticated/manage.news'
-import { Route as AuthenticatedManageSubmissionsRouteImport } from './routes/_authenticated/manage.submissions'
-import { Route as AuthenticatedManageUsersRouteImport } from './routes/_authenticated/manage.users'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
@@ -56,11 +49,6 @@ const AuthenticatedIdeesRoute = AuthenticatedIdeesRouteImport.update({
   path: '/idees',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedManageRoute = AuthenticatedManageRouteImport.update({
-  id: '/manage',
-  path: '/manage',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedPointsBloquantsRoute =
   AuthenticatedPointsBloquantsRouteImport.update({
     id: '/points-bloquants',
@@ -83,41 +71,6 @@ const ApiSuggestionRoute = ApiSuggestionRouteImport.update({
   path: '/api/suggestion',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedManageIndexRoute =
-  AuthenticatedManageIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AuthenticatedManageRoute,
-  } as any)
-const AuthenticatedManageBlockersRoute =
-  AuthenticatedManageBlockersRouteImport.update({
-    id: '/blockers',
-    path: '/blockers',
-    getParentRoute: () => AuthenticatedManageRoute,
-  } as any)
-const AuthenticatedManageMetricsRoute =
-  AuthenticatedManageMetricsRouteImport.update({
-    id: '/metrics',
-    path: '/metrics',
-    getParentRoute: () => AuthenticatedManageRoute,
-  } as any)
-const AuthenticatedManageNewsRoute = AuthenticatedManageNewsRouteImport.update({
-  id: '/news',
-  path: '/news',
-  getParentRoute: () => AuthenticatedManageRoute,
-} as any)
-const AuthenticatedManageSubmissionsRoute =
-  AuthenticatedManageSubmissionsRouteImport.update({
-    id: '/submissions',
-    path: '/submissions',
-    getParentRoute: () => AuthenticatedManageRoute,
-  } as any)
-const AuthenticatedManageUsersRoute =
-  AuthenticatedManageUsersRouteImport.update({
-    id: '/users',
-    path: '/users',
-    getParentRoute: () => AuthenticatedManageRoute,
-  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -125,17 +78,10 @@ export interface FileRoutesByFullPath {
   '/choisir-role': typeof ChoisirRoleRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/idees': typeof AuthenticatedIdeesRoute
-  '/manage': typeof AuthenticatedManageRouteWithChildren
   '/points-bloquants': typeof AuthenticatedPointsBloquantsRoute
   '/trombi': typeof AuthenticatedTrombiRoute
   '/utilisateurs': typeof AuthenticatedUtilisateursRoute
   '/api/suggestion': typeof ApiSuggestionRoute
-  '/manage/blockers': typeof AuthenticatedManageBlockersRoute
-  '/manage/metrics': typeof AuthenticatedManageMetricsRoute
-  '/manage/news': typeof AuthenticatedManageNewsRoute
-  '/manage/submissions': typeof AuthenticatedManageSubmissionsRoute
-  '/manage/users': typeof AuthenticatedManageUsersRoute
-  '/manage/': typeof AuthenticatedManageIndexRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
@@ -147,12 +93,6 @@ export interface FileRoutesByTo {
   '/utilisateurs': typeof AuthenticatedUtilisateursRoute
   '/api/suggestion': typeof ApiSuggestionRoute
   '/': typeof AuthenticatedIndexRoute
-  '/manage/blockers': typeof AuthenticatedManageBlockersRoute
-  '/manage/metrics': typeof AuthenticatedManageMetricsRoute
-  '/manage/news': typeof AuthenticatedManageNewsRoute
-  '/manage/submissions': typeof AuthenticatedManageSubmissionsRoute
-  '/manage/users': typeof AuthenticatedManageUsersRoute
-  '/manage': typeof AuthenticatedManageIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -161,18 +101,11 @@ export interface FileRoutesById {
   '/choisir-role': typeof ChoisirRoleRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/idees': typeof AuthenticatedIdeesRoute
-  '/_authenticated/manage': typeof AuthenticatedManageRouteWithChildren
   '/_authenticated/points-bloquants': typeof AuthenticatedPointsBloquantsRoute
   '/_authenticated/trombi': typeof AuthenticatedTrombiRoute
   '/_authenticated/utilisateurs': typeof AuthenticatedUtilisateursRoute
   '/api/suggestion': typeof ApiSuggestionRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
-  '/_authenticated/manage/blockers': typeof AuthenticatedManageBlockersRoute
-  '/_authenticated/manage/metrics': typeof AuthenticatedManageMetricsRoute
-  '/_authenticated/manage/news': typeof AuthenticatedManageNewsRoute
-  '/_authenticated/manage/submissions': typeof AuthenticatedManageSubmissionsRoute
-  '/_authenticated/manage/users': typeof AuthenticatedManageUsersRoute
-  '/_authenticated/manage/': typeof AuthenticatedManageIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -182,17 +115,10 @@ export interface FileRouteTypes {
     | '/choisir-role'
     | '/sitemap.xml'
     | '/idees'
-    | '/manage'
     | '/points-bloquants'
     | '/trombi'
     | '/utilisateurs'
     | '/api/suggestion'
-    | '/manage/blockers'
-    | '/manage/metrics'
-    | '/manage/news'
-    | '/manage/submissions'
-    | '/manage/users'
-    | '/manage/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
@@ -204,12 +130,6 @@ export interface FileRouteTypes {
     | '/utilisateurs'
     | '/api/suggestion'
     | '/'
-    | '/manage/blockers'
-    | '/manage/metrics'
-    | '/manage/news'
-    | '/manage/submissions'
-    | '/manage/users'
-    | '/manage'
   id:
     | '__root__'
     | '/_authenticated'
@@ -217,18 +137,11 @@ export interface FileRouteTypes {
     | '/choisir-role'
     | '/sitemap.xml'
     | '/_authenticated/idees'
-    | '/_authenticated/manage'
     | '/_authenticated/points-bloquants'
     | '/_authenticated/trombi'
     | '/_authenticated/utilisateurs'
     | '/api/suggestion'
     | '/_authenticated/'
-    | '/_authenticated/manage/blockers'
-    | '/_authenticated/manage/metrics'
-    | '/_authenticated/manage/news'
-    | '/_authenticated/manage/submissions'
-    | '/_authenticated/manage/users'
-    | '/_authenticated/manage/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -283,13 +196,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIdeesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/manage': {
-      id: '/_authenticated/manage'
-      path: '/manage'
-      fullPath: '/manage'
-      preLoaderRoute: typeof AuthenticatedManageRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/points-bloquants': {
       id: '/_authenticated/points-bloquants'
       path: '/points-bloquants'
@@ -318,75 +224,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSuggestionRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/manage/': {
-      id: '/_authenticated/manage/'
-      path: '/'
-      fullPath: '/manage/'
-      preLoaderRoute: typeof AuthenticatedManageIndexRouteImport
-      parentRoute: typeof AuthenticatedManageRoute
-    }
-    '/_authenticated/manage/blockers': {
-      id: '/_authenticated/manage/blockers'
-      path: '/blockers'
-      fullPath: '/manage/blockers'
-      preLoaderRoute: typeof AuthenticatedManageBlockersRouteImport
-      parentRoute: typeof AuthenticatedManageRoute
-    }
-    '/_authenticated/manage/metrics': {
-      id: '/_authenticated/manage/metrics'
-      path: '/metrics'
-      fullPath: '/manage/metrics'
-      preLoaderRoute: typeof AuthenticatedManageMetricsRouteImport
-      parentRoute: typeof AuthenticatedManageRoute
-    }
-    '/_authenticated/manage/news': {
-      id: '/_authenticated/manage/news'
-      path: '/news'
-      fullPath: '/manage/news'
-      preLoaderRoute: typeof AuthenticatedManageNewsRouteImport
-      parentRoute: typeof AuthenticatedManageRoute
-    }
-    '/_authenticated/manage/submissions': {
-      id: '/_authenticated/manage/submissions'
-      path: '/submissions'
-      fullPath: '/manage/submissions'
-      preLoaderRoute: typeof AuthenticatedManageSubmissionsRouteImport
-      parentRoute: typeof AuthenticatedManageRoute
-    }
-    '/_authenticated/manage/users': {
-      id: '/_authenticated/manage/users'
-      path: '/users'
-      fullPath: '/manage/users'
-      preLoaderRoute: typeof AuthenticatedManageUsersRouteImport
-      parentRoute: typeof AuthenticatedManageRoute
-    }
   }
 }
 
-interface AuthenticatedManageRouteChildren {
-  AuthenticatedManageBlockersRoute: typeof AuthenticatedManageBlockersRoute
-  AuthenticatedManageMetricsRoute: typeof AuthenticatedManageMetricsRoute
-  AuthenticatedManageNewsRoute: typeof AuthenticatedManageNewsRoute
-  AuthenticatedManageSubmissionsRoute: typeof AuthenticatedManageSubmissionsRoute
-  AuthenticatedManageUsersRoute: typeof AuthenticatedManageUsersRoute
-  AuthenticatedManageIndexRoute: typeof AuthenticatedManageIndexRoute
-}
-
-const AuthenticatedManageRouteChildren: AuthenticatedManageRouteChildren = {
-  AuthenticatedManageBlockersRoute: AuthenticatedManageBlockersRoute,
-  AuthenticatedManageMetricsRoute: AuthenticatedManageMetricsRoute,
-  AuthenticatedManageNewsRoute: AuthenticatedManageNewsRoute,
-  AuthenticatedManageSubmissionsRoute: AuthenticatedManageSubmissionsRoute,
-  AuthenticatedManageUsersRoute: AuthenticatedManageUsersRoute,
-  AuthenticatedManageIndexRoute: AuthenticatedManageIndexRoute,
-}
-
-const AuthenticatedManageRouteWithChildren =
-  AuthenticatedManageRoute._addFileChildren(AuthenticatedManageRouteChildren)
-
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedIdeesRoute: typeof AuthenticatedIdeesRoute
-  AuthenticatedManageRoute: typeof AuthenticatedManageRouteWithChildren
   AuthenticatedPointsBloquantsRoute: typeof AuthenticatedPointsBloquantsRoute
   AuthenticatedTrombiRoute: typeof AuthenticatedTrombiRoute
   AuthenticatedUtilisateursRoute: typeof AuthenticatedUtilisateursRoute
@@ -395,7 +237,6 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedIdeesRoute: AuthenticatedIdeesRoute,
-  AuthenticatedManageRoute: AuthenticatedManageRouteWithChildren,
   AuthenticatedPointsBloquantsRoute: AuthenticatedPointsBloquantsRoute,
   AuthenticatedTrombiRoute: AuthenticatedTrombiRoute,
   AuthenticatedUtilisateursRoute: AuthenticatedUtilisateursRoute,
