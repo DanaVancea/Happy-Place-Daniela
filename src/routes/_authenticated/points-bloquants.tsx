@@ -7,6 +7,7 @@ import { Icon } from "@/components/icon";
 import { BlockerArchive } from "@/components/dashboard-extras";
 import {
   createBlocker,
+  deleteBlocker,
   fetchBlockers,
   timeAgo,
   updateBlockerStatus,
@@ -19,7 +20,9 @@ import {
   BLOCKER_STATUS_META,
   archiveBlocker,
   SEVERITIES,
+  canDeleteBlocker,
   canEditBlocker,
+  updateBlockerContent,
   createBlockerAction,
   deleteBlockerAction,
   fetchAssignableUsers,
@@ -32,6 +35,7 @@ import {
   type BlockerAction,
 } from "@/lib/blockers";
 import {
+  ConfirmDelete,
   FormActions,
   Field,
   Modal,
@@ -62,11 +66,13 @@ const dateFr = (iso: string) =>
 
 function BlockersPage() {
   const qc = useQueryClient();
-  const { role, email } = Route.useRouteContext();
+  const { role, email, user } = Route.useRouteContext();
   const isAdmin = role === "admin";
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [newActionFor, setNewActionFor] = useState<Blocker | null>(null);
   const [newBlockerOpen, setNewBlockerOpen] = useState(false);
+  const [editingBlocker, setEditingBlocker] = useState<Blocker | null>(null);
+  const [blockerToDelete, setBlockerToDelete] = useState<Blocker | null>(null);
   const blockers = useQuery({ queryKey: ["blockers"], queryFn: fetchBlockers, retry: false });
   const actions = useQuery({
     queryKey: ["blocker-actions"],
@@ -85,7 +91,7 @@ function BlockersPage() {
     enabled: isAdmin,
     retry: false,
   });
-  const ctx = { role, managed: mine.data?.managed ?? [] };
+  const ctx = { role, managed: mine.data?.managed ?? [], userId: user?.id ?? null };
   const creatableTeams = isAdmin ? (teams.data ?? []) : ctx.managed;
   const canCreate = isAdmin || (role === "manager" && ctx.managed.length > 0);
 
@@ -105,6 +111,15 @@ function BlockersPage() {
   const setActionStatus = useMutation({
     mutationFn: updateBlockerActionStatus,
     onSuccess: refresh,
+    onError,
+  });
+  const removeBlocker = useMutation({
+    mutationFn: (id: string) => deleteBlocker(id),
+    onSuccess: () => {
+      toast.success("Point bloquant supprimé");
+      setBlockerToDelete(null);
+      refresh();
+    },
     onError,
   });
   const removeAction = useMutation({
@@ -208,6 +223,9 @@ function BlockersPage() {
           {sorted.map((b) => {
             const sev = severityMeta(b.severity);
             const editable = canEditBlocker(ctx, b.department);
+            const mayDelete = canDeleteBlocker(ctx, b);
+            // Modifier : l'admin, ou le manager qui a créé le point.
+            const mayEditContent = mayDelete;
             const list = (actions.data ?? []).filter((a) => a.blocker_id === b.id);
             // Responsable d'une action du point : peut changer le statut du point, et seulement lui.
             const isPointOwner = list.some(
@@ -306,6 +324,29 @@ function BlockersPage() {
                   </div>
                 </div>
 
+                {(mayEditContent || mayDelete) && (
+                  <div className="flex flex-wrap gap-xs">
+                    {mayEditContent && (
+                      <button
+                        type="button"
+                        onClick={() => setEditingBlocker(b)}
+                        className="flex items-center gap-1 px-sm py-0.5 border border-primary text-primary font-label-sm text-label-sm hover:bg-surface-container"
+                      >
+                        <Icon name="edit" className="text-[16px]" /> MODIFIER
+                      </button>
+                    )}
+                    {mayDelete && (
+                      <button
+                        type="button"
+                        onClick={() => setBlockerToDelete(b)}
+                        className="flex items-center gap-1 px-sm py-0.5 border border-error text-error font-label-sm text-label-sm hover:bg-error-container"
+                      >
+                        <Icon name="delete" className="text-[16px]" /> SUPPRIMER
+                      </button>
+                    )}
+                  </div>
+                )}
+
                 {isAdmin && (
                   <label className="flex flex-wrap items-center gap-xs text-[11px] font-label-sm text-on-surface-variant">
                     Visibilité :
@@ -362,6 +403,25 @@ function BlockersPage() {
           })}
         </div>
       </section>
+      {editingBlocker && (
+        <EditBlockerModal
+          blocker={editingBlocker}
+          teams={creatableTeams}
+          onClose={() => setEditingBlocker(null)}
+          onSaved={() => {
+            setEditingBlocker(null);
+            refresh();
+          }}
+        />
+      )}
+      {blockerToDelete && (
+        <ConfirmDelete
+          label={blockerToDelete.title}
+          pending={removeBlocker.isPending}
+          onCancel={() => setBlockerToDelete(null)}
+          onConfirm={() => removeBlocker.mutate(blockerToDelete.id)}
+        />
+      )}
       {newBlockerOpen && (
         <NewBlockerModal
           teams={creatableTeams}
@@ -784,6 +844,77 @@ function NewBlockerModal({
           ))}
         </div>
         <FormActions pending={create.isPending} onCancel={onClose} submitLabel="CRÉER" />
+      </form>
+    </Modal>
+  );
+}
+
+function EditBlockerModal({
+  blocker,
+  teams,
+  onClose,
+  onSaved,
+}: {
+  blocker: Blocker;
+  teams: string[];
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [title, setTitle] = useState(blocker.title);
+  const [description, setDescription] = useState(blocker.description ?? "");
+  const [department, setDepartment] = useState(blocker.department);
+  const [error, setError] = useState<string | null>(null);
+  const teamOptions = teams.includes(blocker.department) ? teams : [blocker.department, ...teams];
+  const save = useMutation({
+    mutationFn: updateBlockerContent,
+    onSuccess: () => {
+      toast.success("Point bloquant modifié");
+      onSaved();
+    },
+    onError: (e: unknown) => setError((e as Error).message),
+  });
+
+  function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (title.trim().length < 3) return setError("Le titre doit faire au moins 3 caractères.");
+    setError(null);
+    save.mutate({
+      id: blocker.id,
+      title: title.trim(),
+      description: description.trim(),
+      department,
+    });
+  }
+
+  return (
+    <Modal title="Modifier le point bloquant" onClose={onClose}>
+      <form onSubmit={submit} className="space-y-sm" noValidate>
+        {error && (
+          <p role="alert" className="text-body-sm text-error">
+            {error}
+          </p>
+        )}
+        <Field label="Titre">
+          <TextInput value={title} maxLength={160} onChange={(e) => setTitle(e.target.value)} />
+        </Field>
+        <Field label="Description">
+          <TextArea
+            rows={3}
+            value={description}
+            maxLength={2000}
+            onChange={(e) => setDescription(e.target.value)}
+          />
+        </Field>
+        <Field label="Équipe concernée">
+          <Select value={department} onChange={(e) => setDepartment(e.target.value)}>
+            {teamOptions.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <FormActions pending={save.isPending} onCancel={onClose} />
       </form>
     </Modal>
   );

@@ -283,10 +283,14 @@ export function MetricPanel({
   metric: m,
   isAdmin,
   onClose,
+  onEdit,
+  onDelete,
 }: {
   metric: Metric | null;
   isAdmin: boolean;
   onClose: () => void;
+  onEdit?: (m: Metric) => void;
+  onDelete?: (m: Metric) => void;
 }) {
   const qc = useQueryClient();
   const [draft, setDraft] = useState("");
@@ -460,6 +464,28 @@ export function MetricPanel({
                       METTRE À JOUR
                     </button>
                   </div>
+                  {(onEdit || onDelete) && (
+                    <div className="flex flex-wrap gap-xs pt-xs">
+                      {onEdit && (
+                        <button
+                          type="button"
+                          onClick={() => onEdit(m)}
+                          className="rounded border border-primary px-md py-xs font-label-md text-label-md text-primary hover:bg-surface-container"
+                        >
+                          MODIFIER L'INDICATEUR
+                        </button>
+                      )}
+                      {onDelete && (
+                        <button
+                          type="button"
+                          onClick={() => onDelete(m)}
+                          className="rounded border border-error px-md py-xs font-label-md text-label-md text-error hover:bg-error-container"
+                        >
+                          SUPPRIMER
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

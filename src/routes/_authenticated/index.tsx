@@ -5,12 +5,14 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { DepartureNotices } from "@/components/departure-notices";
 import { Icon } from "@/components/icon";
+import { MetricDelete, MetricForm } from "@/components/metric-form";
 import { MetricPanel, MetricTile, STATUS_STYLE } from "@/components/metric-panel";
 import { NewsCard } from "@/components/news-feed";
 import { NewsEditor } from "@/components/news-editor";
 import { NewsReader } from "@/components/news-reader";
 import {
   deleteDraftNews,
+  processAttachmentDeletionQueue,
   fetchMetrics,
   fetchNews,
   publishDraftNews,
@@ -83,6 +85,19 @@ function NewsPage() {
   const [visible, setVisible] = useState(PAGE_SIZE);
   const [reading, setReading] = useState<News | null>(null);
   const [metric, setMetric] = useState<Metric | null>(null);
+  const [metricForm, setMetricForm] = useState<{ metric: Metric | null } | null>(null);
+  const [metricToDelete, setMetricToDelete] = useState<Metric | null>(null);
+  // Suppression silencieuse des pièces jointes échues, une fois par chargement de l'accueil (Admin).
+  useEffect(() => {
+    if (!isAdmin) return;
+    processAttachmentDeletionQueue()
+      .then((r) => {
+        if (r.remaining > 0) toast.error(`${r.remaining} document(s) n'ont pas pu être supprimés.`);
+        else if (r.deleted > 0) toast.success(`${r.deleted} document(s) supprimé(s)`);
+      })
+      .catch(() => toast.error("La suppression des documents échus a échoué."))
+      .finally(() => qc.invalidateQueries({ queryKey: ["attachment_deletion_queue"] }));
+  }, [isAdmin, qc]);
   const [editor, setEditor] = useState<{ news: News | null } | null>(null);
   // L'éditeur est dans l'espace admin, en bas de page : on y amène la personne à l'ouverture.
   useEffect(() => {
@@ -384,6 +399,15 @@ function NewsPage() {
         >
           {/* Indicateurs */}
           <section aria-labelledby="indicateurs-titre" className="space-y-sm">
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={() => setMetricForm({ metric: null })}
+                className="flex items-center gap-xs rounded border border-primary px-md py-xs font-label-md text-label-md text-primary hover:bg-surface-container"
+              >
+                <Icon name="add" /> NOUVEL INDICATEUR
+              </button>
+            )}
             {metrics.isLoading && (
               <div className="h-24 rounded bg-surface-container animate-pulse" />
             )}
@@ -607,7 +631,33 @@ function NewsPage() {
             </section>
           )}
 
-          <MetricPanel metric={metric} isAdmin={isAdmin} onClose={() => setMetric(null)} />
+          <MetricPanel
+            metric={metric}
+            isAdmin={isAdmin}
+            onClose={() => setMetric(null)}
+            onEdit={
+              isAdmin
+                ? (m) => {
+                    setMetric(null);
+                    setMetricForm({ metric: m });
+                  }
+                : undefined
+            }
+            onDelete={
+              isAdmin
+                ? (m) => {
+                    setMetric(null);
+                    setMetricToDelete(m);
+                  }
+                : undefined
+            }
+          />
+          {metricForm && (
+            <MetricForm metric={metricForm.metric} onClose={() => setMetricForm(null)} />
+          )}
+          {metricToDelete && (
+            <MetricDelete metric={metricToDelete} onClose={() => setMetricToDelete(null)} />
+          )}
           <NewsReader
             news={reading}
             list={readerList}

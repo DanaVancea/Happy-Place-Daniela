@@ -130,6 +130,30 @@ export async function updateBlockerSettings(input: {
   if (error) throw error;
 }
 
+/** Modifie le titre, la description et l'équipe d'un point (admin, ou manager créateur). */
+export async function updateBlockerContent(input: {
+  id: string;
+  title: string;
+  description: string;
+  department: string;
+}) {
+  const { id, ...patch } = input;
+  const { error } = await db
+    .from("blockers")
+    .update({ ...patch, updated_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+/** Supprime un point : l'admin, ou le manager qui l'a créé (la base fait foi). */
+export function canDeleteBlocker(
+  ctx: { role: string | null | undefined; managed: string[]; userId?: string | null },
+  b: { department: string; created_by?: string | null },
+) {
+  if (ctx.role === "admin") return true;
+  return !!ctx.userId && b.created_by === ctx.userId && canEditBlocker(ctx, b.department);
+}
+
 /** Peut modifier ce point : admin, ou manager de l'équipe concernée (la base fait foi). */
 export function canEditBlocker(
   ctx: { role: string | null | undefined; managed: string[] },

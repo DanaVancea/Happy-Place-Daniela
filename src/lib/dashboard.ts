@@ -59,6 +59,7 @@ export type Blocker = {
   sensitive_team?: string | null;
   resolved_at?: string | null;
   archived_at?: string | null;
+  created_by?: string | null;
 };
 
 export type Metric = {

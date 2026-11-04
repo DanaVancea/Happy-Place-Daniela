@@ -79,7 +79,7 @@ Pour partager l'app avec ton groupe : onglet **Ports** → clic droit sur la lig
 |---|---|
 | **Collaborateur** | Lit les actualités et les indicateurs, soumet des idées, questions ou problèmes pour son équipe. |
 | **Manager** | Valide ou refuse les demandes des équipes qu'il manage, rédige des actualités (en brouillon), suit les points bloquants. |
-| **Admin** | Gère tout : contenus, indicateurs, équipes et utilisateurs (espace « Gérer les données »). |
+| **Admin** | Gère tout : contenus, indicateurs, équipes et utilisateurs, directement depuis les onglets de l'accueil. |
 
 Ces droits sont appliqués **par la base elle-même** (règles RLS de Supabase), pas seulement par l'interface.
 
