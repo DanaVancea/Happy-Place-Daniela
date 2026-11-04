@@ -20,7 +20,7 @@ export function BlockerArchive({ open, onClose }: { open: boolean; onClose: () =
                 Archive des points bloquants
               </DialogPrimitive.Title>
               <DialogPrimitive.Description className="font-label-sm text-label-sm text-on-surface-variant">
-                Points résolus, du plus récent au plus ancien
+                Points archivés (à la main ou un mois après leur résolution)
               </DialogPrimitive.Description>
             </div>
             <DialogPrimitive.Close aria-label="Fermer" className="text-on-surface-variant hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary">
@@ -31,7 +31,7 @@ export function BlockerArchive({ open, onClose }: { open: boolean; onClose: () =
             {q.isLoading && <p className="text-body-sm text-on-surface-variant">Chargement…</p>}
             {q.isError && <p className="text-body-sm text-error">L'archive est indisponible.</p>}
             {q.data?.length === 0 && (
-              <p className="text-body-sm text-on-surface-variant italic">Aucun point bloquant résolu.</p>
+              <p className="text-body-sm text-on-surface-variant italic">Aucun point bloquant archivé.</p>
             )}
             {q.data?.map((b) => (
               <div key={b.id} className="bg-card border border-outline-variant p-sm min-w-0">

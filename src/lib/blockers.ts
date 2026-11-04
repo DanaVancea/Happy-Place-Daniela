@@ -141,3 +141,12 @@ export function canEditBlocker(
     ctx.managed.some((t) => t.trim().toLowerCase() === department.trim().toLowerCase())
   );
 }
+
+/** Archive à la main un point résolu (manager de l'équipe ou admin). */
+export async function archiveBlocker(id: string) {
+  const { error } = await db
+    .from("blockers")
+    .update({ archived_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) throw error;
+}

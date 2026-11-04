@@ -113,6 +113,8 @@ export type Database = {
           created_at: string
           created_by: string | null
           sensitive_team: string | null
+          resolved_at: string | null
+          archived_at: string | null
           department: string
           description: string | null
           id: string
@@ -125,6 +127,8 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           sensitive_team?: string | null
+          resolved_at?: string | null
+          archived_at?: string | null
           department?: string
           description?: string | null
           id?: string
@@ -137,6 +141,8 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           sensitive_team?: string | null
+          resolved_at?: string | null
+          archived_at?: string | null
           department?: string
           description?: string | null
           id?: string

@@ -57,6 +57,8 @@ export type Blocker = {
   status: string;
   updated_at: string;
   sensitive_team?: string | null;
+  resolved_at?: string | null;
+  archived_at?: string | null;
 };
 
 export type Metric = {
@@ -257,21 +259,31 @@ export async function reviewSubmission(
   if (error) throw error;
 }
 
+/** Un point résolu passe en archive un mois après sa résolution (ou dès qu'il est archivé à la main). */
+function archiveCutoff(): string {
+  const d = new Date();
+  d.setMonth(d.getMonth() - 1);
+  return d.toISOString();
+}
+
+/** Points visibles dans la liste : en cours, ou résolus depuis moins d'un mois et non archivés. */
 export async function fetchBlockers(): Promise<Blocker[]> {
   const { data, error } = await db
     .from("blockers")
     .select("*")
-    .neq("status", "RÉSOLU")
+    .is("archived_at", null)
+    .or(`status.neq.RÉSOLU,resolved_at.gte.${archiveCutoff()}`)
     .order("updated_at", { ascending: false });
   if (error) throw error;
   return (data ?? []) as Blocker[];
 }
 
+/** Archive : points archivés à la main, ou résolus depuis plus d'un mois. */
 export async function fetchResolvedBlockers(): Promise<Blocker[]> {
   const { data, error } = await db
     .from("blockers")
     .select("*")
-    .eq("status", "RÉSOLU")
+    .or(`archived_at.not.is.null,and(status.eq.RÉSOLU,resolved_at.lt.${archiveCutoff()})`)
     .order("updated_at", { ascending: false });
   if (error) throw error;
   return (data ?? []) as Blocker[];
@@ -475,11 +487,14 @@ export async function fetchAllBlockers(): Promise<Blocker[]> {
   return (data ?? []) as Blocker[];
 }
 
-export async function createBlocker(input: BlockerInput) {
-  const { error } = await db
+export async function createBlocker(input: BlockerInput): Promise<string> {
+  const { data, error } = await db
     .from("blockers")
-    .insert({ ...input, severity: input.severity as Enums["blocker_severity"], status: input.status as Enums["blocker_status"], updated_at: new Date().toISOString() });
+    .insert({ ...input, severity: input.severity as Enums["blocker_severity"], status: input.status as Enums["blocker_status"], updated_at: new Date().toISOString() })
+    .select("id")
+    .single();
   if (error) throw error;
+  return data.id;
 }
 
 export async function updateBlocker(id: string, input: BlockerInput) {

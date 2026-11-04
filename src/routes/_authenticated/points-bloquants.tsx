@@ -5,10 +5,17 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { Icon } from "@/components/icon";
 import { BlockerArchive } from "@/components/dashboard-extras";
-import { fetchBlockers, timeAgo, updateBlockerStatus, type Blocker } from "@/lib/dashboard";
+import {
+  createBlocker,
+  fetchBlockers,
+  timeAgo,
+  updateBlockerStatus,
+  type Blocker,
+} from "@/lib/dashboard";
 import { fetchMyTeams, fetchTeams } from "@/lib/ideas";
 import {
   ACTION_STATUSES,
+  archiveBlocker,
   SEVERITIES,
   canEditBlocker,
   createBlockerAction,
@@ -22,7 +29,14 @@ import {
   type ActionStatus,
   type BlockerAction,
 } from "@/lib/blockers";
-import { FormActions, Field, Modal, Select, TextInput } from "@/components/manage/crud-ui";
+import {
+  FormActions,
+  Field,
+  Modal,
+  Select,
+  TextArea,
+  TextInput,
+} from "@/components/manage/crud-ui";
 
 export const Route = createFileRoute("/_authenticated/points-bloquants")({
   head: () => ({
@@ -50,6 +64,7 @@ function BlockersPage() {
   const isAdmin = role === "admin";
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [newActionFor, setNewActionFor] = useState<Blocker | null>(null);
+  const [newBlockerOpen, setNewBlockerOpen] = useState(false);
   const blockers = useQuery({ queryKey: ["blockers"], queryFn: fetchBlockers, retry: false });
   const actions = useQuery({
     queryKey: ["blocker-actions"],
@@ -69,6 +84,8 @@ function BlockersPage() {
     retry: false,
   });
   const ctx = { role, managed: mine.data?.managed ?? [] };
+  const creatableTeams = isAdmin ? (teams.data ?? []) : ctx.managed;
+  const canCreate = isAdmin || (role === "manager" && ctx.managed.length > 0);
 
   const onError = (e: unknown) => toast.error((e as Error).message);
   const refresh = () => {
@@ -76,6 +93,7 @@ function BlockersPage() {
     qc.invalidateQueries({ queryKey: ["blocker-actions"] });
     qc.invalidateQueries({ queryKey: ["blocker-history"] });
   };
+  const archive = useMutation({ mutationFn: archiveBlocker, onSuccess: refresh, onError });
   const setBlocker = useMutation({ mutationFn: updateBlockerStatus, onSuccess: refresh, onError });
   const setSettings = useMutation({
     mutationFn: updateBlockerSettings,
@@ -93,11 +111,21 @@ function BlockersPage() {
     onError,
   });
 
-  const sorted = [...(blockers.data ?? [])].sort(
-    (a, b) =>
-      severityMeta(a.severity).rank - severityMeta(b.severity).rank ||
-      b.updated_at.localeCompare(a.updated_at),
+  const [filterSeverity, setFilterSeverity] = useState("");
+  const [filterTeam, setFilterTeam] = useState("");
+  const teamsInList = [...new Set((blockers.data ?? []).map((b) => b.department))].sort((x, y) =>
+    x.localeCompare(y, "fr"),
   );
+  const bySeverity = (x: Blocker, y: Blocker) =>
+    severityMeta(x.severity).rank - severityMeta(y.severity).rank;
+  const byTeam = (x: Blocker, y: Blocker) => x.department.localeCompare(y.department, "fr");
+  const sorted = (blockers.data ?? [])
+    .filter(
+      (x) =>
+        (!filterSeverity || x.severity === filterSeverity) &&
+        (!filterTeam || x.department === filterTeam),
+    )
+    .sort((x, y) => bySeverity(x, y) || byTeam(x, y) || y.updated_at.localeCompare(x.updated_at));
 
   return (
     <AppShell
@@ -106,20 +134,69 @@ function BlockersPage() {
       eyebrow="Suivi opérationnel"
       title="Points bloquants"
       actions={
-        <button
-          type="button"
-          aria-haspopup="dialog"
-          onClick={() => setArchiveOpen(true)}
-          className="flex items-center gap-xs rounded px-md py-xs border border-primary bg-transparent text-primary font-label-md text-label-md hover:bg-surface-container"
-        >
-          <Icon name="inventory_2" /> VOIR L'ARCHIVE
-        </button>
+        <div className="flex flex-wrap gap-xs">
+          {canCreate && (
+            <button
+              type="button"
+              aria-haspopup="dialog"
+              onClick={() => setNewBlockerOpen(true)}
+              className="flex items-center gap-xs rounded px-md py-xs bg-primary text-on-primary font-label-md text-label-md"
+            >
+              <Icon name="add" /> NOUVEAU POINT BLOQUANT
+            </button>
+          )}
+          <button
+            type="button"
+            aria-haspopup="dialog"
+            onClick={() => setArchiveOpen(true)}
+            className="flex items-center gap-xs rounded px-md py-xs border border-primary bg-transparent text-primary font-label-md text-label-md hover:bg-surface-container"
+          >
+            <Icon name="inventory_2" /> VOIR L'ARCHIVE
+          </button>
+        </div>
       }
     >
       <section className="bg-surface-container-lowest border border-outline-variant rounded-lg p-md">
-        <div className="space-y-sm">
+        <div className="space-y-md">
+          <div className="flex flex-wrap items-end gap-sm">
+            <label className="text-[11px] font-label-sm text-on-surface-variant uppercase">
+              Criticité
+              <select
+                value={filterSeverity}
+                onChange={(e) => setFilterSeverity(e.target.value)}
+                className="block mt-1 bg-card border border-outline-variant rounded px-xs py-1 text-body-sm normal-case"
+              >
+                <option value="">Toutes</option>
+                {SEVERITIES.map((v) => (
+                  <option key={v} value={v}>
+                    {severityMeta(v).rank} · {severityMeta(v).label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="text-[11px] font-label-sm text-on-surface-variant uppercase">
+              Équipe concernée
+              <select
+                value={filterTeam}
+                onChange={(e) => setFilterTeam(e.target.value)}
+                className="block mt-1 bg-card border border-outline-variant rounded px-xs py-1 text-body-sm normal-case"
+              >
+                <option value="">Toutes</option>
+                {teamsInList.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
           {blockers.isError && (
             <p className="text-body-sm text-error">Les points bloquants sont indisponibles.</p>
+          )}
+          {blockers.data && blockers.data.length > 0 && sorted.length === 0 && (
+            <p className="text-body-sm text-on-surface-variant italic">
+              Aucun point bloquant ne correspond à ces filtres.
+            </p>
           )}
           {blockers.data?.length === 0 && (
             <p className="text-body-sm text-on-surface-variant italic">
@@ -133,7 +210,7 @@ function BlockersPage() {
             return (
               <article
                 key={b.id}
-                className={`${b.severity === "critique" ? "accent-bar " : ""}bg-card border border-outline-variant rounded p-sm space-y-sm`}
+                className={`${b.severity === "critique" ? "accent-bar " : ""}bg-card border-2 border-outline rounded p-md space-y-sm shadow-sm`}
               >
                 <div className="flex items-start justify-between gap-sm">
                   <div className="min-w-0">
@@ -169,8 +246,7 @@ function BlockersPage() {
                       </span>
                       {b.sensitive_team && (
                         <span className="inline-flex items-center gap-1 rounded border border-outline px-xs py-0.5 text-[11px] font-label-sm">
-                          <Icon name="lock" className="text-[14px]" /> Sensible · visible par{" "}
-                          {b.sensitive_team}
+                          <Icon name="lock" className="text-[14px]" /> Sujet sensible
                         </span>
                       )}
                     </div>
@@ -182,46 +258,56 @@ function BlockersPage() {
                       Mis à jour {timeAgo(b.updated_at)}
                     </span>
                   </div>
-                  {editable ? (
-                    <select
-                      aria-label={`Statut de ${b.title}`}
-                      value={b.status}
-                      onChange={(e) => setBlocker.mutate({ id: b.id, status: e.target.value })}
-                      className="bg-transparent border border-outline-variant rounded text-xs font-label-sm text-on-surface-variant cursor-pointer"
-                    >
-                      <option>OUVERT</option>
-                      <option>EN COURS</option>
-                      <option>SURVEILLANCE</option>
-                      <option
-                        disabled={b.status === "OUVERT"}
-                        title={b.status === "OUVERT" ? "Passe d'abord par EN COURS" : undefined}
+                  <div className="flex flex-col items-end gap-xs">
+                    {editable ? (
+                      <select
+                        aria-label={`Statut de ${b.title}`}
+                        value={b.status}
+                        onChange={(e) => setBlocker.mutate({ id: b.id, status: e.target.value })}
+                        className="bg-transparent border border-outline-variant rounded text-xs font-label-sm text-on-surface-variant cursor-pointer"
                       >
-                        RÉSOLU
-                      </option>
-                    </select>
-                  ) : (
-                    <span className="text-xs font-label-sm text-on-surface-variant">
-                      {b.status}
-                    </span>
-                  )}
+                        <option>OUVERT</option>
+                        <option>EN COURS</option>
+                        <option>SURVEILLANCE</option>
+                        <option
+                          disabled={b.status === "OUVERT"}
+                          title={b.status === "OUVERT" ? "Passe d'abord par EN COURS" : undefined}
+                        >
+                          RÉSOLU
+                        </option>
+                      </select>
+                    ) : (
+                      <span className="text-xs font-label-sm text-on-surface-variant">
+                        {b.status}
+                      </span>
+                    )}
+                    {editable && b.status === "RÉSOLU" && (
+                      <button
+                        type="button"
+                        onClick={() => archive.mutate(b.id)}
+                        className="flex items-center gap-1 px-sm py-0.5 border border-primary text-primary font-label-sm text-label-sm hover:bg-surface-container"
+                      >
+                        <Icon name="inventory_2" className="text-[16px]" /> ARCHIVER
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {isAdmin && (
                   <label className="flex flex-wrap items-center gap-xs text-[11px] font-label-sm text-on-surface-variant">
-                    Sujet sensible, visible des admins et du manager de l'équipe :
+                    Visibilité :
                     <select
-                      value={b.sensitive_team ?? ""}
+                      value={b.sensitive_team ? "prive" : "public"}
                       onChange={(e) =>
-                        setSettings.mutate({ id: b.id, sensitive_team: e.target.value || null })
+                        setSettings.mutate({
+                          id: b.id,
+                          sensitive_team: e.target.value === "prive" ? b.department : null,
+                        })
                       }
                       className="bg-card border border-outline-variant rounded px-xs py-0.5"
                     >
-                      <option value="">Non sensible (visible de tous)</option>
-                      {(teams.data ?? []).map((t) => (
-                        <option key={t} value={t}>
-                          {t}
-                        </option>
-                      ))}
+                      <option value="public">Public</option>
+                      <option value="prive">Privé</option>
                     </select>
                   </label>
                 )}
@@ -263,6 +349,17 @@ function BlockersPage() {
           })}
         </div>
       </section>
+      {newBlockerOpen && (
+        <NewBlockerModal
+          teams={creatableTeams}
+          canSetVisibility={isAdmin}
+          onClose={() => setNewBlockerOpen(false)}
+          onCreated={() => {
+            setNewBlockerOpen(false);
+            refresh();
+          }}
+        />
+      )}
       {newActionFor && (
         <NewActionModal
           blocker={newActionFor}
@@ -459,5 +556,184 @@ function History({ blockerId }: { blockerId: string }) {
         </ul>
       )}
     </div>
+  );
+}
+
+function NewBlockerModal({
+  teams,
+  canSetVisibility,
+  onClose,
+  onCreated,
+}: {
+  teams: string[];
+  canSetVisibility: boolean;
+  onClose: () => void;
+  onCreated: () => void;
+}) {
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [department, setDepartment] = useState(teams.length === 1 ? teams[0] : "");
+  const [severity, setSeverity] = useState<string>("moyenne");
+  const [isPrivate, setIsPrivate] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const users = useQuery({
+    queryKey: ["assignable-users"],
+    queryFn: fetchAssignableUsers,
+    retry: false,
+  });
+  type Draft = { title: string; owner: string; due: string };
+  const [drafts, setDrafts] = useState<Draft[]>([]);
+  const patchDraft = (i: number, patch: Partial<Draft>) =>
+    setDrafts(drafts.map((d, k) => (k === i ? { ...d, ...patch } : d)));
+  const create = useMutation({
+    mutationFn: async (input: Parameters<typeof createBlocker>[0]) => {
+      const id = await createBlocker(input);
+      for (const d of drafts) {
+        const person = users.data?.find((u) => u.email === d.owner);
+        if (!person) continue;
+        await createBlockerAction({
+          blocker_id: id,
+          title: d.title.trim(),
+          owner_email: person.email,
+          owner_name: person.name,
+          due_date: d.due,
+          status: "prévue",
+        });
+      }
+    },
+    onSuccess: () => {
+      toast.success("Point bloquant créé");
+      onCreated();
+    },
+    onError: (e: unknown) => setError((e as Error).message),
+  });
+
+  function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (title.trim().length < 3) return setError("Le titre doit faire au moins 3 caractères.");
+    if (!department) return setError("Choisis l'équipe concernée.");
+    for (const [i, d] of drafts.entries()) {
+      if (d.title.trim().length < 3)
+        return setError(`Action ${i + 1} : décris l'action (3 caractères minimum).`);
+      if (!d.owner) return setError(`Action ${i + 1} : choisis la personne responsable.`);
+      if (!d.due) return setError(`Action ${i + 1} : la date d'échéance est obligatoire.`);
+    }
+    setError(null);
+    create.mutate({
+      title: title.trim(),
+      description: description.trim(),
+      department,
+      severity,
+      status: "OUVERT",
+      sensitive_team: isPrivate ? department : null,
+    });
+  }
+
+  return (
+    <Modal title="Nouveau point bloquant" onClose={onClose}>
+      <form onSubmit={submit} className="space-y-sm" noValidate>
+        {error && (
+          <p role="alert" className="text-body-sm text-error">
+            {error}
+          </p>
+        )}
+        <Field label="Titre">
+          <TextInput value={title} maxLength={160} onChange={(e) => setTitle(e.target.value)} />
+        </Field>
+        <Field label="Description">
+          <TextArea
+            rows={3}
+            value={description}
+            maxLength={2000}
+            onChange={(e) => setDescription(e.target.value)}
+          />
+        </Field>
+        <Field label="Équipe concernée">
+          <Select value={department} onChange={(e) => setDepartment(e.target.value)}>
+            <option value="">Choisir une équipe…</option>
+            {teams.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field label="Criticité">
+          <Select value={severity} onChange={(e) => setSeverity(e.target.value)}>
+            {SEVERITIES.map((v) => (
+              <option key={v} value={v}>
+                {severityMeta(v).rank} · {severityMeta(v).label}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        {canSetVisibility && (
+          <Field label="Visibilité">
+            <Select
+              value={isPrivate ? "prive" : "public"}
+              onChange={(e) => setIsPrivate(e.target.value === "prive")}
+            >
+              <option value="public">Public</option>
+              <option value="prive">Privé</option>
+            </Select>
+          </Field>
+        )}
+        <div className="space-y-xs border-t border-outline-variant pt-sm">
+          <div className="flex items-center justify-between gap-sm">
+            <span className="font-label-sm text-label-sm text-on-surface-variant uppercase">
+              Actions ({drafts.length})
+            </span>
+            <button
+              type="button"
+              onClick={() => setDrafts([...drafts, { title: "", owner: "", due: "" }])}
+              className="px-sm py-0.5 border border-primary text-primary font-label-sm text-label-sm hover:bg-surface-container"
+            >
+              + AJOUTER UNE ACTION
+            </button>
+          </div>
+          {drafts.map((d, i) => (
+            <div key={i} className="space-y-xs border border-outline-variant p-xs">
+              <TextInput
+                aria-label={`Action ${i + 1}`}
+                placeholder="Action à mener"
+                value={d.title}
+                maxLength={200}
+                onChange={(e) => patchDraft(i, { title: e.target.value })}
+              />
+              <Select
+                aria-label={`Responsable de l'action ${i + 1}`}
+                value={d.owner}
+                onChange={(e) => patchDraft(i, { owner: e.target.value })}
+              >
+                <option value="">Responsable…</option>
+                {(users.data ?? []).map((u) => (
+                  <option key={u.email} value={u.email}>
+                    {u.name}
+                    {u.team ? ` — ${u.team}` : ""}
+                  </option>
+                ))}
+              </Select>
+              <div className="flex gap-xs">
+                <TextInput
+                  type="date"
+                  aria-label={`Échéance de l'action ${i + 1}`}
+                  value={d.due}
+                  onChange={(e) => patchDraft(i, { due: e.target.value })}
+                />
+                <button
+                  type="button"
+                  aria-label={`Retirer l'action ${i + 1}`}
+                  onClick={() => setDrafts(drafts.filter((_, k) => k !== i))}
+                  className="px-sm text-on-surface-variant hover:text-error"
+                >
+                  <Icon name="delete" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+        <FormActions pending={create.isPending} onCancel={onClose} submitLabel="CRÉER" />
+      </form>
+    </Modal>
   );
 }
