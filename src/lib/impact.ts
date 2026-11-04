@@ -111,20 +111,23 @@ export function downloadCsv(filename: string, content: string) {
 }
 
 const MONTHS = [
-  "janv.",
-  "févr.",
-  "mars",
-  "avr.",
-  "mai",
-  "juin",
-  "juil.",
-  "août",
-  "sept.",
-  "oct.",
-  "nov.",
-  "déc.",
+  "Janvier",
+  "Février",
+  "Mars",
+  "Avril",
+  "Mai",
+  "Juin",
+  "Juillet",
+  "Août",
+  "Septembre",
+  "Octobre",
+  "Novembre",
+  "Décembre",
 ];
-export const monthLabel = (ymd: string) =>
-  `${MONTHS[Number(ymd.slice(5, 7)) - 1]} ${ymd.slice(2, 4)}`;
+/** « Novembre » ; l'année n'est ajoutée que pour un mois d'une autre année (« Décembre 2025 »). */
+export const monthLabel = (ymd: string) => {
+  const name = MONTHS[Number(ymd.slice(5, 7)) - 1];
+  return ymd.slice(0, 4) === String(new Date().getFullYear()) ? name : `${name} ${ymd.slice(0, 4)}`;
+};
 export const weekLabel = (ymd: string) => `${ymd.slice(8, 10)}/${ymd.slice(5, 7)}`;
 export const pct = (n: number, total: number) => (total > 0 ? Math.round((n / total) * 100) : 0);

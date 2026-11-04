@@ -53,7 +53,7 @@ function Bars({
   return (
     <ul className="space-y-xs">
       {rows.map((r) => (
-        <li key={r.label} className="grid grid-cols-[7rem_1fr_auto] items-center gap-xs">
+        <li key={r.label} className="grid grid-cols-[9rem_1fr_auto] items-center gap-xs">
           <span className="truncate font-body-sm text-on-surface-variant">{r.label}</span>
           <span className="h-3 bg-surface-container-high">
             <span className="block h-3 bg-primary" style={{ width: `${(r.value / top) * 100}%` }} />
