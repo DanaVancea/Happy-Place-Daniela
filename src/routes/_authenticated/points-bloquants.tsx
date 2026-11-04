@@ -235,20 +235,19 @@ function BlockersPage() {
 
                 {isAdmin && (
                   <label className="flex flex-wrap items-center gap-xs text-[11px] font-label-sm text-on-surface-variant">
-                    Sujet sensible, équipe concernée :
+                    Visibilité :
                     <select
-                      value={b.sensitive_team ?? ""}
+                      value={b.sensitive_team ? "prive" : "public"}
                       onChange={(e) =>
-                        setSettings.mutate({ id: b.id, sensitive_team: e.target.value || null })
+                        setSettings.mutate({
+                          id: b.id,
+                          sensitive_team: e.target.value === "prive" ? b.department : null,
+                        })
                       }
                       className="bg-card border border-outline-variant rounded px-xs py-0.5"
                     >
-                      <option value="">Non sensible (visible de tous)</option>
-                      {(teams.data ?? []).map((t) => (
-                        <option key={t} value={t}>
-                          {t}
-                        </option>
-                      ))}
+                      <option value="public">Public (visible de tous)</option>
+                      <option value="prive">Privé (manager de l'équipe et admins)</option>
                     </select>
                   </label>
                 )}
@@ -293,7 +292,7 @@ function BlockersPage() {
       {newBlockerOpen && (
         <NewBlockerModal
           teams={creatableTeams}
-          sensitiveTeams={isAdmin ? (teams.data ?? []) : []}
+          canSetVisibility={isAdmin}
           onClose={() => setNewBlockerOpen(false)}
           onCreated={() => {
             setNewBlockerOpen(false);
@@ -502,12 +501,12 @@ function History({ blockerId }: { blockerId: string }) {
 
 function NewBlockerModal({
   teams,
-  sensitiveTeams,
+  canSetVisibility,
   onClose,
   onCreated,
 }: {
   teams: string[];
-  sensitiveTeams: string[];
+  canSetVisibility: boolean;
   onClose: () => void;
   onCreated: () => void;
 }) {
@@ -515,7 +514,7 @@ function NewBlockerModal({
   const [description, setDescription] = useState("");
   const [department, setDepartment] = useState(teams.length === 1 ? teams[0] : "");
   const [severity, setSeverity] = useState<string>("moyenne");
-  const [sensitive, setSensitive] = useState("");
+  const [isPrivate, setIsPrivate] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const create = useMutation({
     mutationFn: createBlocker,
@@ -537,7 +536,7 @@ function NewBlockerModal({
       department,
       severity,
       status: "OUVERT",
-      sensitive_team: sensitive || null,
+      sensitive_team: isPrivate ? department : null,
     });
   }
 
@@ -579,15 +578,14 @@ function NewBlockerModal({
             ))}
           </Select>
         </Field>
-        {sensitiveTeams.length > 0 && (
-          <Field label="Sujet sensible">
-            <Select value={sensitive} onChange={(e) => setSensitive(e.target.value)}>
-              <option value="">Non sensible (visible de tous)</option>
-              {sensitiveTeams.map((t) => (
-                <option key={t} value={t}>
-                  {t}
-                </option>
-              ))}
+        {canSetVisibility && (
+          <Field label="Visibilité">
+            <Select
+              value={isPrivate ? "prive" : "public"}
+              onChange={(e) => setIsPrivate(e.target.value === "prive")}
+            >
+              <option value="public">Public (visible de tous)</option>
+              <option value="prive">Privé (manager de l'équipe et admins)</option>
             </Select>
           </Field>
         )}

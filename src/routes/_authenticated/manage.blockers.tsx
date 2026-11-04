@@ -30,9 +30,15 @@ export const Route = createFileRoute("/_authenticated/manage/blockers")({
   head: () => ({
     meta: [
       { title: "Gestion des points bloquants — Happy Place" },
-      { name: "description", content: "Créez, modifiez et supprimez les points bloquants dans Happy Place." },
+      {
+        name: "description",
+        content: "Créez, modifiez et supprimez les points bloquants dans Happy Place.",
+      },
       { property: "og:title", content: "Gestion des points bloquants — Happy Place" },
-      { property: "og:description", content: "Gérez les alertes opérationnelles des missions de recrutement dans Happy Place." },
+      {
+        property: "og:description",
+        content: "Gérez les alertes opérationnelles des missions de recrutement dans Happy Place.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -137,7 +143,8 @@ function ManageBlockers() {
               <p className="font-body-md text-primary font-bold">{b.title}</p>
               <p className="text-body-sm text-on-surface-variant">{b.description}</p>
               <p className="text-[11px] font-label-sm text-on-surface-variant uppercase mt-xs">
-                 {b.department} • {severityLabels[b.severity] ?? b.severity} • {b.status} • {timeAgo(b.updated_at)}
+                {b.department} • {severityLabels[b.severity] ?? b.severity} • {b.status} •{" "}
+                {timeAgo(b.updated_at)}
               </p>
             </div>
             <RowActions
@@ -187,7 +194,13 @@ function ManageBlockers() {
             <Field label="Équipe concernée" error={errors.department}>
               <Select
                 value={form.department}
-                onChange={(e) => setForm({ ...form, department: e.target.value })}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    department: e.target.value,
+                    sensitive_team: form.sensitive_team ? e.target.value || null : null,
+                  })
+                }
               >
                 <option value="">Choisir une équipe…</option>
                 {form.department && !teams.data?.includes(form.department) && (
@@ -231,17 +244,18 @@ function ManageBlockers() {
                 )}
               </Select>
             </Field>
-            <Field label="Sujet sensible" error={errors.sensitive_team}>
+            <Field label="Visibilité" error={errors.sensitive_team}>
               <Select
-                value={form.sensitive_team ?? ""}
-                onChange={(e) => setForm({ ...form, sensitive_team: e.target.value || null })}
+                value={form.sensitive_team ? "prive" : "public"}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    sensitive_team: e.target.value === "prive" ? form.department || null : null,
+                  })
+                }
               >
-                <option value="">Non sensible (visible de tous)</option>
-                {(teams.data ?? []).map((t) => (
-                  <option key={t} value={t}>
-                    {t}
-                  </option>
-                ))}
+                <option value="public">Public (visible de tous)</option>
+                <option value="prive">Privé (manager de l'équipe et admins)</option>
               </Select>
             </Field>
             <FormActions pending={save.isPending} onCancel={close} />
