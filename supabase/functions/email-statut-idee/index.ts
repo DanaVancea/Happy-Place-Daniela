@@ -81,16 +81,16 @@ Deno.serve(async (req) => {
     .maybeSingle();
   if (!idee || idee.status === idee.status_notified) return new Response("Rien à envoyer", { status: 200 });
 
-  // Destinataire : l'auteur, s'il est toujours dans l'entreprise et n'a pas désactivé les mails.
+  // Destinataire : l'auteur, s'il est toujours dans l'entreprise.
   const { data: auteur } = await admin
     .from("allowed_users")
-    .select("email, departure_date, notify_idea_status")
+    .select("email, departure_date")
     .eq("email", String(idee.author_email).toLowerCase())
     .maybeSingle();
   const aujourdhui = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Paris" });
   const parti = !auteur || (auteur.departure_date && auteur.departure_date <= aujourdhui);
   const ancien = idee.status_notified as string;
-  if (parti || auteur.notify_idea_status === false) {
+  if (parti) {
     // Rien à envoyer, mais on avance le curseur pour ne pas renvoyer plus tard un mail périmé.
     await admin.from("ideas").update({ status_notified: idee.status }).eq("id", ideaId);
     return new Response("Auteur non notifiable", { status: 200 });

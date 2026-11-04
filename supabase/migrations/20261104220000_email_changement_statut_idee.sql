@@ -10,8 +10,8 @@
 --   * changements en rafale (A → B puis B → C en quelques secondes) : un seul mail « A → C »,
 --     grâce à la colonne status_notified (dernier statut dont l'auteur a été prévenu) ;
 --   * les idées déjà existantes ne déclenchent aucun mail (status_notified = statut actuel) ;
---   * désactivation : par personne (allowed_users.notify_idea_status = false) ou pour tout le monde
---     (ALTER TABLE public.ideas DISABLE TRIGGER email_statut_idee).
+--   * pas de désactivation par les utilisateurs pour l'instant (décision de Daniela) ; en cas de besoin,
+--     les admins peuvent couper l'envoi pour tout le monde : ALTER TABLE public.ideas DISABLE TRIGGER email_statut_idee.
 --
 -- Fonctionnement : comme l'e-mail de bienvenue, un trigger appelle la fonction Edge « email-statut-idee »
 -- (pg_net, asynchrone, protégé par try/catch : la décision du manager réussit toujours). C'est la fonction
@@ -25,8 +25,6 @@ ALTER TABLE public.ideas ADD COLUMN IF NOT EXISTS status_notified text;
 UPDATE public.ideas SET status_notified = status WHERE status_notified IS NULL;
 ALTER TABLE public.ideas ALTER COLUMN status_notified SET DEFAULT 'en attente';
 ALTER TABLE public.ideas ALTER COLUMN status_notified SET NOT NULL;
-
-ALTER TABLE public.allowed_users ADD COLUMN IF NOT EXISTS notify_idea_status boolean NOT NULL DEFAULT true;
 
 -- 2. Trigger ------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION private.notifier_statut_idee()
