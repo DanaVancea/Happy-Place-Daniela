@@ -24,27 +24,15 @@ import {
   type NewsInput,
 } from "@/lib/dashboard";
 import { NewsImage, NewsLinks, NewsMediaEditor } from "@/components/news-media";
-import {
-  emptyMedia,
-  linkErrors,
-  mediaFromNews,
-  toNewsLinks,
-  type MediaDraft,
-} from "@/lib/news-media";
+import { emptyMedia, linkErrors, mediaFromNews, toNewsLinks, type MediaDraft } from "@/lib/news-media";
 
 export const Route = createFileRoute("/_authenticated/manage/news")({
   head: () => ({
     meta: [
       { title: "Gestion des actualités — Happy Place" },
-      {
-        name: "description",
-        content: "Créez, modifiez et supprimez les actualités de Happy Place.",
-      },
+      { name: "description", content: "Créez, modifiez et supprimez les actualités de Happy Place." },
       { property: "og:title", content: "Gestion des actualités — Happy Place" },
-      {
-        property: "og:description",
-        content: "Gérez les actualités du cabinet de recrutement dans Happy Place.",
-      },
+      { property: "og:description", content: "Gérez les actualités du cabinet de recrutement dans Happy Place." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -149,12 +137,10 @@ function ManageNews() {
             <div className="min-w-0 flex-1 space-y-xs">
               {n.image_path && <NewsImage path={n.image_path} alt={n.title} />}
               <p className="font-body-md text-primary font-bold wrap-anywhere">{n.title}</p>
-              <p className="text-body-sm text-on-surface-variant line-clamp-2 wrap-anywhere">
-                {n.body}
-              </p>
+              <p className="text-body-sm text-on-surface-variant line-clamp-2 wrap-anywhere">{n.body}</p>
               <NewsLinks links={n.links} />
               <p className="text-[11px] font-label-sm text-on-surface-variant uppercase mt-xs">
-                {newsStatusLabels[n.status] ?? n.status} • {n.author} • {timeAgo(n.created_at)}
+                 {newsStatusLabels[n.status] ?? n.status} • {n.author} • {timeAgo(n.created_at)}
               </p>
             </div>
             <RowActions

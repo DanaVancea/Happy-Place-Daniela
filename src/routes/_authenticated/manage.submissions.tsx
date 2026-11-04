@@ -34,15 +34,9 @@ export const Route = createFileRoute("/_authenticated/manage/submissions")({
   head: () => ({
     meta: [
       { title: "Gestion des soumissions — Happy Place" },
-      {
-        name: "description",
-        content: "Créez, modifiez et supprimez les soumissions dans Happy Place.",
-      },
+      { name: "description", content: "Créez, modifiez et supprimez les soumissions dans Happy Place." },
       { property: "og:title", content: "Gestion des soumissions — Happy Place" },
-      {
-        property: "og:description",
-        content: "Gérez les propositions des pôles du cabinet dans Happy Place.",
-      },
+      { property: "og:description", content: "Gérez les propositions des pôles du cabinet dans Happy Place." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -146,9 +140,7 @@ function ManageSubmissions() {
               <p className="font-body-md text-primary font-bold wrap-anywhere">
                 {s.author_name} — {s.team}
               </p>
-              <p className="text-body-sm text-on-surface-variant italic line-clamp-3 whitespace-pre-line wrap-anywhere">
-                “<Linkify text={s.content} />”
-              </p>
+              <p className="text-body-sm text-on-surface-variant italic line-clamp-3 whitespace-pre-line wrap-anywhere">“<Linkify text={s.content} />”</p>
               <button
                 type="button"
                 aria-haspopup="dialog"
@@ -159,7 +151,7 @@ function ManageSubmissions() {
               </button>
               <AttachmentLink path={s.attachment_path} name={s.attachment_name} />
               <p className="text-[11px] font-label-sm text-on-surface-variant uppercase mt-xs">
-                {submissionStatusLabels[s.status] ?? s.status} • {timeAgo(s.created_at)}
+                 {submissionStatusLabels[s.status] ?? s.status} • {timeAgo(s.created_at)}
               </p>
               {s.status === "refusée" && s.rejection_category && (
                 <p className="text-body-sm text-error mt-xs wrap-anywhere">
@@ -192,9 +184,7 @@ function ManageSubmissions() {
 
       <SubmissionReader
         submission={reading}
-        statusLabel={
-          reading ? (submissionStatusLabels[reading.status] ?? reading.status) : undefined
-        }
+        statusLabel={reading ? submissionStatusLabels[reading.status] ?? reading.status : undefined}
         onClose={() => setReading(null)}
       />
       {form && (
@@ -243,9 +233,7 @@ function ManageSubmissions() {
                   >
                     <option value="">— Choisir un motif —</option>
                     {REJECTION_CATEGORIES.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
+                      <option key={c} value={c}>{c}</option>
                     ))}
                   </Select>
                 </Field>
