@@ -245,7 +245,7 @@ function BlockersPage() {
                         Équipe : {b.department}
                       </span>
                       {b.sensitive_team && (
-                        <span className="inline-flex items-center gap-1 rounded border border-outline px-xs py-0.5 text-[11px] font-label-sm">
+                        <span className="inline-flex items-center gap-1 rounded border border-error bg-error-container text-on-error-container px-xs py-0.5 text-[11px] font-label-sm">
                           <Icon name="lock" className="text-[14px]" /> Sujet sensible
                         </span>
                       )}
