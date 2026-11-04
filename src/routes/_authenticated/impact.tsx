@@ -156,15 +156,34 @@ function Content({
   onExport: () => void;
   exporting: boolean;
 }) {
+  const [view, setView] = useState<"semaine" | "mois">("semaine");
+  const activeRows =
+    view === "semaine"
+      ? [...d.weekly].reverse().map((w) => ({
+          label: weekLabel(w.start),
+          value: w.active,
+          hint: `/ ${w.connected} connectés`,
+        }))
+      : [...d.monthly].reverse().map((m) => ({
+          label: monthLabel(m.start),
+          value: m.active,
+          hint: `/ ${m.connected} connectés`,
+        }));
   const last = d.team_participation[d.team_participation.length - 1];
   const months = useMemo(
-    () => [...d.team_participation].map((m) => m.start),
+    () => d.team_participation.map((m) => m.start).reverse(),
     [d.team_participation],
   );
   const ideasByTeam = useMemo(() => {
     const map = new Map<string, number>();
     for (const r of d.ideas_monthly) map.set(`${r.month}|${r.team}`, r.count);
-    const teams = Array.from(new Set([...d.teams, ...d.ideas_monthly.map((r) => r.team)])).sort();
+    const totals = new Map<string, number>();
+    for (const r of d.ideas_monthly) totals.set(r.team, (totals.get(r.team) ?? 0) + r.count);
+    // Seulement les équipes qui ont réellement déposé des idées, les plus actives d'abord.
+    const teams = [...totals.entries()]
+      .filter(([, n]) => n > 0)
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .map(([t]) => t);
     return { map, teams };
   }, [d]);
   const ideasPerMonth = months.map((m) => ({
@@ -203,29 +222,33 @@ function Content({
         (collaborateurs, managers et admins) dont le départ n'est pas passé.
       </p>
 
-      <div className="grid gap-md md:grid-cols-2">
-        <Card title="Actifs par semaine" hint="8 dernières semaines (début de semaine)">
-          <Bars
-            rows={d.weekly.map((w) => ({
-              label: weekLabel(w.start),
-              value: w.active,
-              hint: `/ ${w.connected} connectés`,
-            }))}
-            max={Math.max(1, d.total_users)}
-            unit=""
-          />
-        </Card>
-        <Card title="Actifs par mois" hint="6 derniers mois">
-          <Bars
-            rows={d.monthly.map((m) => ({
-              label: monthLabel(m.start),
-              value: m.active,
-              hint: `/ ${m.connected} connectés`,
-            }))}
-            max={Math.max(1, d.total_users)}
-          />
-        </Card>
-      </div>
+      <Card
+        title={view === "semaine" ? "Actifs par semaine" : "Actifs par mois"}
+        hint={
+          view === "semaine"
+            ? "8 dernières semaines, la plus récente en haut (début de semaine)"
+            : "6 derniers mois, le plus récent en haut"
+        }
+      >
+        <div className="flex flex-wrap gap-xs" role="group" aria-label="Vue">
+          {(["semaine", "mois"] as const).map((v) => (
+            <button
+              key={v}
+              type="button"
+              aria-pressed={view === v}
+              onClick={() => setView(v)}
+              className={`rounded border px-sm py-xs font-label-md text-label-md ${
+                view === v
+                  ? "border-primary bg-primary text-on-primary"
+                  : "border-outline-variant text-primary hover:bg-surface-container"
+              }`}
+            >
+              {v === "semaine" ? "Par semaine" : "Par mois"}
+            </button>
+          ))}
+        </div>
+        <Bars rows={activeRows} max={Math.max(1, d.total_users)} />
+      </Card>
 
       <Card
         title="Pages les plus consultées"
@@ -267,7 +290,10 @@ function Content({
         )}
       </Card>
 
-      <Card title="Idées déposées" hint="Par mois, puis par équipe (6 derniers mois)">
+      <Card
+        title="Idées déposées"
+        hint="6 derniers mois, le plus récent en haut · seulement les équipes qui ont déposé des idées"
+      >
         <Bars rows={ideasPerMonth} />
         <div className="overflow-x-auto">
           <table className="w-full border-collapse font-body-sm">
@@ -303,7 +329,8 @@ function Content({
         </div>
         <p className="font-body-sm text-on-surface-variant">
           Équipes avec au moins une idée :{" "}
-          {d.team_participation
+          {[...d.team_participation]
+            .reverse()
             .map((m) => `${monthLabel(m.start)} ${pct(m.teams_with_ideas, d.teams_total)} %`)
             .join(" · ")}
         </p>
