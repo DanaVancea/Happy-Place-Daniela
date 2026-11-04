@@ -21,7 +21,7 @@ AS $$
 BEGIN
   BEGIN
     PERFORM net.http_post(
-      url := 'https://sfraefdsnopxpfxzdrwb.supabase.co/functions/v1/email-bienvenue',
+      url := 'https://tjffpngjczxwpunijmpy.supabase.co/functions/v1/email-bienvenue',
       headers := '{"Content-Type":"application/json","x-webhook-secret":"REMPLACER_PAR_LE_SECRET"}'::jsonb,
       body := jsonb_build_object('type', 'INSERT', 'record', jsonb_build_object('id', NEW.id, 'email', NEW.email)),
       timeout_milliseconds := 5000
