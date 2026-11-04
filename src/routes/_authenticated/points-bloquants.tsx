@@ -209,6 +209,10 @@ function BlockersPage() {
             const sev = severityMeta(b.severity);
             const editable = canEditBlocker(ctx, b.department);
             const list = (actions.data ?? []).filter((a) => a.blocker_id === b.id);
+            // Responsable d'une action du point : peut changer le statut du point, et seulement lui.
+            const isPointOwner = list.some(
+              (a) => a.owner_email.toLowerCase() === email.toLowerCase(),
+            );
             return (
               <article
                 key={b.id}
@@ -261,7 +265,7 @@ function BlockersPage() {
                     </span>
                   </div>
                   <div className="flex flex-col items-end gap-xs">
-                    {editable ? (
+                    {editable || isPointOwner ? (
                       <select
                         aria-label={`Statut de ${b.title}`}
                         value={b.status}
