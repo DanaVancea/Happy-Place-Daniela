@@ -14,7 +14,10 @@ const TABS = [
   { to: "/trombi", label: "Trombi", exact: false },
 ] as const;
 
-const ADMIN_TAB = { to: "/utilisateurs", label: "Gestion des utilisateurs", exact: false } as const;
+const ADMIN_TABS = [
+  { to: "/utilisateurs", label: "Gestion des utilisateurs", exact: false },
+  { to: "/impact", label: "Impact", exact: false },
+] as const;
 
 const ROLE_LABELS: Record<string, string> = {
   admin: "ADMIN",
@@ -60,7 +63,7 @@ export function AppShell({
     enabled: isAdmin,
     retry: false,
   });
-  const tabs = isAdmin ? [...TABS, ADMIN_TAB] : TABS;
+  const tabs = isAdmin ? [...TABS, ...ADMIN_TABS] : TABS;
   const pendingCount = canReview
     ? (ideas.data ?? []).filter(
         (i) =>

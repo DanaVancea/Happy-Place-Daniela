@@ -1,6 +1,8 @@
-import { createFileRoute, isRedirect, Outlet, redirect } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { createFileRoute, isRedirect, Outlet, redirect, useLocation } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchOwnRole } from "@/lib/auth";
+import { trackPageView, trackedPageOf } from "@/lib/impact";
 
 // Version élèves : un compte connecté sans rôle est envoyé vers /choisir-role
 // (au lieu d'être déconnecté comme dans l'app d'origine, réservée à une liste blanche).
@@ -21,5 +23,15 @@ export const Route = createFileRoute("/_authenticated")({
       throw redirect({ to: "/auth" });
     }
   },
-  component: () => <Outlet />,
+  component: AuthenticatedLayout,
 });
+
+/** Compte une page vue à chaque arrivée sur Actus, Boîte à idées, Points bloquants ou Trombi. */
+function AuthenticatedLayout() {
+  const pathname = useLocation({ select: (l) => l.pathname });
+  useEffect(() => {
+    const page = trackedPageOf(pathname);
+    if (page) void trackPageView(page);
+  }, [pathname]);
+  return <Outlet />;
+}

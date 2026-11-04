@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
+import { FeedbackButton } from "@/components/feedback-button";
 import { DepartureNotices } from "@/components/departure-notices";
 import { Icon } from "@/components/icon";
 import { MetricDelete, MetricForm } from "@/components/metric-form";
@@ -514,6 +515,7 @@ function NewsPage() {
           />
         </div>
       </div>
+      <FeedbackButton />
     </AppShell>
   );
 }
