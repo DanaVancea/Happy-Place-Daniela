@@ -59,8 +59,6 @@ export type Blocker = {
   sensitive_team?: string | null;
   resolved_at?: string | null;
   archived_at?: string | null;
-  owner_email?: string | null;
-  owner_name?: string | null;
 };
 
 export type Metric = {
@@ -371,8 +369,6 @@ export type BlockerInput = {
   severity: string;
   status: string;
   sensitive_team: string | null;
-  owner_email?: string | null;
-  owner_name?: string | null;
 };
 export type MetricInput = {
   key: string;

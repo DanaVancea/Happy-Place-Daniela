@@ -208,9 +208,11 @@ function BlockersPage() {
           {sorted.map((b) => {
             const sev = severityMeta(b.severity);
             const editable = canEditBlocker(ctx, b.department);
-            const isPointOwner =
-              !!b.owner_email && b.owner_email.toLowerCase() === email.toLowerCase();
             const list = (actions.data ?? []).filter((a) => a.blocker_id === b.id);
+            // Responsable d'une action du point : peut changer le statut du point, et seulement lui.
+            const isPointOwner = list.some(
+              (a) => a.owner_email.toLowerCase() === email.toLowerCase(),
+            );
             return (
               <article
                 key={b.id}
@@ -261,16 +263,6 @@ function BlockersPage() {
                     <span className="text-[11px] font-label-sm text-on-surface-variant">
                       Mis à jour {timeAgo(b.updated_at)}
                     </span>
-                    {editable ? (
-                      <PointOwner
-                        blocker={b}
-                        onSave={(p) => setSettings.mutate({ id: b.id, ...p })}
-                      />
-                    ) : (
-                      <p className="text-[11px] font-label-sm text-on-surface-variant mt-xs">
-                        Responsable du point : {b.owner_name ?? "non défini"}
-                      </p>
-                    )}
                   </div>
                   <div className="flex flex-col items-end gap-xs">
                     {editable || isPointOwner ? (
@@ -590,56 +582,6 @@ function NewActionModal({
   );
 }
 
-/** Responsable du point : choisi par un admin ou le manager de l'équipe ; il ne peut changer que le statut. */
-function PointOwner({
-  blocker,
-  onSave,
-}: {
-  blocker: Blocker;
-  onSave: (p: { owner_email: string | null; owner_name: string | null }) => void;
-}) {
-  const users = useQuery({
-    queryKey: ["assignable-users"],
-    queryFn: fetchAssignableUsers,
-    retry: false,
-  });
-  const [text, setText] = useState(blocker.owner_name ?? "");
-  const person = findOwner(users.data, text);
-  const changed =
-    text.trim() === "" ? !!blocker.owner_email : person?.email !== blocker.owner_email;
-  return (
-    <div className="mt-xs space-y-0.5">
-      <span className="text-[11px] font-label-sm text-on-surface-variant">
-        Responsable du point (ne peut changer que le statut)
-      </span>
-      <div className="flex gap-xs">
-        <OwnerInput
-          id={`owner-point-${blocker.id}`}
-          users={users.data}
-          value={text}
-          onChange={setText}
-          label={`Responsable de ${blocker.title}`}
-        />
-        {changed && (text.trim() === "" || person) && (
-          <button
-            type="button"
-            onClick={() =>
-              onSave(
-                person
-                  ? { owner_email: person.email, owner_name: person.name }
-                  : { owner_email: null, owner_name: null },
-              )
-            }
-            className="px-sm border border-primary text-primary font-label-sm text-label-sm hover:bg-surface-container"
-          >
-            OK
-          </button>
-        )}
-      </div>
-    </div>
-  );
-}
-
 function History({ blockerId }: { blockerId: string }) {
   const [open, setOpen] = useState(false);
   const q = useQuery({
@@ -689,7 +631,6 @@ function NewBlockerModal({
   const [department, setDepartment] = useState(teams.length === 1 ? teams[0] : "");
   const [severity, setSeverity] = useState<string>("moyenne");
   const [isPrivate, setIsPrivate] = useState(false);
-  const [pointOwner, setPointOwner] = useState("");
   const [error, setError] = useState<string | null>(null);
   const users = useQuery({
     queryKey: ["assignable-users"],
@@ -734,13 +675,8 @@ function NewBlockerModal({
         return setError(`Action ${i + 1} : choisis la personne responsable dans la liste.`);
       if (!d.due) return setError(`Action ${i + 1} : la date d'échéance est obligatoire.`);
     }
-    const po = findOwner(users.data, pointOwner);
-    if (pointOwner.trim() && !po)
-      return setError("Responsable du point : choisis une personne dans la liste.");
     setError(null);
     create.mutate({
-      owner_email: po?.email ?? null,
-      owner_name: po?.name ?? null,
       title: title.trim(),
       description: description.trim(),
       department,
@@ -787,15 +723,6 @@ function NewBlockerModal({
               </option>
             ))}
           </Select>
-        </Field>
-        <Field label="Responsable du point (peut changer le statut)">
-          <OwnerInput
-            id="owner-new-point"
-            users={users.data}
-            value={pointOwner}
-            onChange={setPointOwner}
-            label="Responsable du point"
-          />
         </Field>
         {canSetVisibility && (
           <Field label="Visibilité">
