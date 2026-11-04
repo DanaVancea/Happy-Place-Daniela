@@ -16,6 +16,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedGererActualitesRouteImport } from './routes/_authenticated/gerer-actualites'
 import { Route as AuthenticatedIdeesRouteImport } from './routes/_authenticated/idees'
+import { Route as AuthenticatedImpactRouteImport } from './routes/_authenticated/impact'
 import { Route as AuthenticatedPointsBloquantsRouteImport } from './routes/_authenticated/points-bloquants'
 import { Route as AuthenticatedTrombiRouteImport } from './routes/_authenticated/trombi'
 import { Route as AuthenticatedUtilisateursRouteImport } from './routes/_authenticated/utilisateurs'
@@ -56,6 +57,11 @@ const AuthenticatedIdeesRoute = AuthenticatedIdeesRouteImport.update({
   path: '/idees',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedImpactRoute = AuthenticatedImpactRouteImport.update({
+  id: '/impact',
+  path: '/impact',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedPointsBloquantsRoute =
   AuthenticatedPointsBloquantsRouteImport.update({
     id: '/points-bloquants',
@@ -86,6 +92,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/gerer-actualites': typeof AuthenticatedGererActualitesRoute
   '/idees': typeof AuthenticatedIdeesRoute
+  '/impact': typeof AuthenticatedImpactRoute
   '/points-bloquants': typeof AuthenticatedPointsBloquantsRoute
   '/trombi': typeof AuthenticatedTrombiRoute
   '/utilisateurs': typeof AuthenticatedUtilisateursRoute
@@ -97,6 +104,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/gerer-actualites': typeof AuthenticatedGererActualitesRoute
   '/idees': typeof AuthenticatedIdeesRoute
+  '/impact': typeof AuthenticatedImpactRoute
   '/points-bloquants': typeof AuthenticatedPointsBloquantsRoute
   '/trombi': typeof AuthenticatedTrombiRoute
   '/utilisateurs': typeof AuthenticatedUtilisateursRoute
@@ -111,6 +119,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/gerer-actualites': typeof AuthenticatedGererActualitesRoute
   '/_authenticated/idees': typeof AuthenticatedIdeesRoute
+  '/_authenticated/impact': typeof AuthenticatedImpactRoute
   '/_authenticated/points-bloquants': typeof AuthenticatedPointsBloquantsRoute
   '/_authenticated/trombi': typeof AuthenticatedTrombiRoute
   '/_authenticated/utilisateurs': typeof AuthenticatedUtilisateursRoute
@@ -126,6 +135,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/gerer-actualites'
     | '/idees'
+    | '/impact'
     | '/points-bloquants'
     | '/trombi'
     | '/utilisateurs'
@@ -137,6 +147,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/gerer-actualites'
     | '/idees'
+    | '/impact'
     | '/points-bloquants'
     | '/trombi'
     | '/utilisateurs'
@@ -150,6 +161,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/_authenticated/gerer-actualites'
     | '/_authenticated/idees'
+    | '/_authenticated/impact'
     | '/_authenticated/points-bloquants'
     | '/_authenticated/trombi'
     | '/_authenticated/utilisateurs'
@@ -216,6 +228,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIdeesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/impact': {
+      id: '/_authenticated/impact'
+      path: '/impact'
+      fullPath: '/impact'
+      preLoaderRoute: typeof AuthenticatedImpactRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/points-bloquants': {
       id: '/_authenticated/points-bloquants'
       path: '/points-bloquants'
@@ -250,6 +269,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedGererActualitesRoute: typeof AuthenticatedGererActualitesRoute
   AuthenticatedIdeesRoute: typeof AuthenticatedIdeesRoute
+  AuthenticatedImpactRoute: typeof AuthenticatedImpactRoute
   AuthenticatedPointsBloquantsRoute: typeof AuthenticatedPointsBloquantsRoute
   AuthenticatedTrombiRoute: typeof AuthenticatedTrombiRoute
   AuthenticatedUtilisateursRoute: typeof AuthenticatedUtilisateursRoute
@@ -259,6 +279,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedGererActualitesRoute: AuthenticatedGererActualitesRoute,
   AuthenticatedIdeesRoute: AuthenticatedIdeesRoute,
+  AuthenticatedImpactRoute: AuthenticatedImpactRoute,
   AuthenticatedPointsBloquantsRoute: AuthenticatedPointsBloquantsRoute,
   AuthenticatedTrombiRoute: AuthenticatedTrombiRoute,
   AuthenticatedUtilisateursRoute: AuthenticatedUtilisateursRoute,

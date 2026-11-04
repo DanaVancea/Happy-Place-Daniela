@@ -1,0 +1,336 @@
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
+import { AppShell } from "@/components/app-shell";
+import { Icon } from "@/components/icon";
+import {
+  PAGE_LABEL,
+  downloadCsv,
+  feedbackToCsv,
+  fetchFeedbackRows,
+  fetchImpact,
+  monthLabel,
+  pct,
+  weekLabel,
+  type ImpactData,
+} from "@/lib/impact";
+
+export const Route = createFileRoute("/_authenticated/impact")({
+  head: () => ({
+    meta: [
+      { title: "Happy Place — Impact" },
+      {
+        name: "description",
+        content:
+          "Espace admin : usage de l'application, idées par équipe et avis des collaborateurs.",
+      },
+    ],
+  }),
+  beforeLoad: ({ context }) => {
+    if (context.role !== "admin") throw redirect({ to: "/" });
+  },
+  component: ImpactPage,
+});
+
+const PERIODS = [
+  { days: 7, label: "7 jours" },
+  { days: 30, label: "30 jours" },
+  { days: 90, label: "90 jours" },
+] as const;
+
+/** Barres horizontales sobres : couleur unie, valeur écrite (jamais la couleur seule). */
+function Bars({
+  rows,
+  max,
+  unit = "",
+}: {
+  rows: { label: string; value: number; hint?: string }[];
+  max?: number;
+  unit?: string;
+}) {
+  const top = max ?? Math.max(1, ...rows.map((r) => r.value));
+  return (
+    <ul className="space-y-xs">
+      {rows.map((r) => (
+        <li key={r.label} className="grid grid-cols-[7rem_1fr_auto] items-center gap-xs">
+          <span className="truncate font-body-sm text-on-surface-variant">{r.label}</span>
+          <span className="h-3 bg-surface-container-high">
+            <span className="block h-3 bg-primary" style={{ width: `${(r.value / top) * 100}%` }} />
+          </span>
+          <span className="font-label-md text-label-md text-primary">
+            {r.value}
+            {unit}
+            {r.hint ? <span className="text-on-surface-variant"> {r.hint}</span> : null}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function Card({
+  title,
+  hint,
+  children,
+}: {
+  title: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="space-y-sm border border-outline-variant bg-card p-md">
+      <div>
+        <h2 className="font-headline-sm text-headline-sm text-primary">{title}</h2>
+        {hint && <p className="font-label-sm text-label-sm text-on-surface-variant">{hint}</p>}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function Kpi({ label, value, sub }: { label: string; value: string; sub: string }) {
+  return (
+    <div className="border border-outline-variant bg-card p-md">
+      <p className="font-label-sm text-label-sm uppercase text-on-surface-variant">{label}</p>
+      <p className="font-headline-lg text-headline-lg text-primary">{value}</p>
+      <p className="font-body-sm text-on-surface-variant">{sub}</p>
+    </div>
+  );
+}
+
+function ImpactPage() {
+  const { role, email } = Route.useRouteContext();
+  const [days, setDays] = useState<number>(30);
+  const q = useQuery({
+    queryKey: ["impact", days],
+    queryFn: () => fetchImpact(days),
+    retry: false,
+  });
+  const d = q.data;
+
+  const exportCsv = useMutation({
+    mutationFn: fetchFeedbackRows,
+    onSuccess: (rows) => {
+      if (rows.length === 0) return toast.info("Aucun avis à exporter pour l'instant");
+      downloadCsv(
+        `avis-happy-place-${new Date().toISOString().slice(0, 10)}.csv`,
+        feedbackToCsv(rows),
+      );
+    },
+    onError: (e) => toast.error((e as Error).message),
+  });
+
+  return (
+    <AppShell role={role} email={email} eyebrow="Espace admin" title="Impact">
+      {q.isLoading && <p className="text-body-sm text-on-surface-variant">Chargement…</p>}
+      {q.isError && (
+        <p className="text-body-sm text-error">
+          Les indicateurs sont indisponibles : la migration « impact_et_feedback » est-elle
+          appliquée ?
+        </p>
+      )}
+      {d && (
+        <Content
+          d={d}
+          days={days}
+          setDays={setDays}
+          onExport={() => exportCsv.mutate()}
+          exporting={exportCsv.isPending}
+        />
+      )}
+    </AppShell>
+  );
+}
+
+function Content({
+  d,
+  days,
+  setDays,
+  onExport,
+  exporting,
+}: {
+  d: ImpactData;
+  days: number;
+  setDays: (n: number) => void;
+  onExport: () => void;
+  exporting: boolean;
+}) {
+  const last = d.team_participation[d.team_participation.length - 1];
+  const months = useMemo(
+    () => [...d.team_participation].map((m) => m.start),
+    [d.team_participation],
+  );
+  const ideasByTeam = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const r of d.ideas_monthly) map.set(`${r.month}|${r.team}`, r.count);
+    const teams = Array.from(new Set([...d.teams, ...d.ideas_monthly.map((r) => r.team)])).sort();
+    return { map, teams };
+  }, [d]);
+  const ideasPerMonth = months.map((m) => ({
+    label: monthLabel(m),
+    value: d.ideas_monthly.filter((r) => r.month === m).reduce((s, r) => s + r.count, 0),
+  }));
+  const dist = d.feedback.distribution ?? {};
+
+  return (
+    <>
+      <div className="grid gap-sm md:grid-cols-4">
+        <Kpi
+          label="Actifs sur 7 jours"
+          value={`${pct(d.wau, d.total_users)} %`}
+          sub={`${d.wau} sur ${d.total_users} collaborateurs`}
+        />
+        <Kpi
+          label="Actifs sur 30 jours"
+          value={`${pct(d.mau, d.total_users)} %`}
+          sub={`${d.mau} sur ${d.total_users} collaborateurs`}
+        />
+        <Kpi
+          label="Équipes qui déposent des idées"
+          value={`${pct(last?.teams_with_ideas ?? 0, d.teams_total)} %`}
+          sub={`${last?.teams_with_ideas ?? 0} sur ${d.teams_total} équipes ce mois-ci`}
+        />
+        <Kpi
+          label="Note moyenne"
+          value={d.feedback.average == null ? "–" : `${Number(d.feedback.average).toFixed(1)} / 5`}
+          sub={`${d.feedback.responses} avis au total`}
+        />
+      </div>
+      <p className="font-body-sm text-on-surface-variant">
+        Est « actif » un collaborateur qui a fait une action (idée, vote, commentaire, point
+        bloquant, « Lu » ou favori d'une actualité, avis) : ouvrir l'application ne suffit pas.
+      </p>
+
+      <div className="grid gap-md md:grid-cols-2">
+        <Card title="Actifs par semaine" hint="8 dernières semaines (début de semaine)">
+          <Bars
+            rows={d.weekly.map((w) => ({ label: weekLabel(w.start), value: w.active }))}
+            max={Math.max(1, d.total_users)}
+            unit=""
+          />
+        </Card>
+        <Card title="Actifs par mois" hint="6 derniers mois">
+          <Bars
+            rows={d.monthly.map((m) => ({ label: monthLabel(m.start), value: m.active }))}
+            max={Math.max(1, d.total_users)}
+          />
+        </Card>
+      </div>
+
+      <Card
+        title="Pages les plus consultées"
+        hint={
+          d.pages_since
+            ? `Suivi depuis le ${d.pages_since.split("-").reverse().join("/")} · une page vue par arrivée sur la page`
+            : "Le suivi démarre à la mise en ligne : pas encore de données."
+        }
+      >
+        <div className="flex flex-wrap gap-xs" role="group" aria-label="Période">
+          {PERIODS.map((p) => (
+            <button
+              key={p.days}
+              type="button"
+              aria-pressed={days === p.days}
+              onClick={() => setDays(p.days)}
+              className={`rounded border px-sm py-xs font-label-md text-label-md ${
+                days === p.days
+                  ? "border-primary bg-primary text-on-primary"
+                  : "border-outline-variant text-primary hover:bg-surface-container"
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+        {d.pages.length === 0 ? (
+          <p className="font-body-sm italic text-on-surface-variant">
+            Aucune page vue sur cette période.
+          </p>
+        ) : (
+          <Bars
+            rows={d.pages.map((p) => ({
+              label: PAGE_LABEL[p.page] ?? p.page,
+              value: p.views,
+              hint: `(${p.visitors} pers.)`,
+            }))}
+          />
+        )}
+      </Card>
+
+      <Card title="Idées déposées" hint="Par mois, puis par équipe (6 derniers mois)">
+        <Bars rows={ideasPerMonth} />
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse font-body-sm">
+            <thead>
+              <tr className="border-b border-outline-variant text-left font-label-sm text-label-sm uppercase text-on-surface-variant">
+                <th className="py-xs pr-sm">Équipe</th>
+                {months.map((m) => (
+                  <th key={m} className="px-xs py-xs text-right">
+                    {monthLabel(m)}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {ideasByTeam.teams.map((t) => (
+                <tr key={t} className="border-b border-outline-variant">
+                  <td className="py-xs pr-sm">{t}</td>
+                  {months.map((m) => {
+                    const n = ideasByTeam.map.get(`${m}|${t}`) ?? 0;
+                    return (
+                      <td
+                        key={m}
+                        className={`px-xs py-xs text-right ${n === 0 ? "text-on-surface-variant" : "font-bold text-primary"}`}
+                      >
+                        {n}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="font-body-sm text-on-surface-variant">
+          Équipes avec au moins une idée :{" "}
+          {d.team_participation
+            .map((m) => `${monthLabel(m.start)} ${pct(m.teams_with_ideas, d.teams_total)} %`)
+            .join(" · ")}
+        </p>
+      </Card>
+
+      <Card
+        title="Avis des collaborateurs"
+        hint="« Happy Place t'aide-t-il au quotidien ? » · anonyme, sans lien avec une personne"
+      >
+        <div className="grid gap-md md:grid-cols-2">
+          <Bars
+            rows={[5, 4, 3, 2, 1].map((n) => ({
+              label: `${n} sur 5`,
+              value: dist[String(n)] ?? 0,
+            }))}
+          />
+          <Bars
+            rows={d.feedback.monthly.map((m) => ({
+              label: monthLabel(m.start),
+              value: m.average == null ? 0 : Number(m.average),
+              hint: `(${m.count} avis)`,
+            }))}
+            max={5}
+          />
+        </div>
+        <div>
+          <button
+            type="button"
+            onClick={onExport}
+            disabled={exporting}
+            className="flex items-center gap-xs rounded border border-primary px-md py-xs font-label-md text-label-md text-primary hover:bg-surface-container disabled:opacity-50"
+          >
+            <Icon name="download" /> EXPORTER LES AVIS (CSV)
+          </button>
+        </div>
+      </Card>
+    </>
+  );
+}
