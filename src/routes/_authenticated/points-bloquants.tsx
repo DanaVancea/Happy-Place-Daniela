@@ -5,7 +5,13 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { Icon } from "@/components/icon";
 import { BlockerArchive } from "@/components/dashboard-extras";
-import { fetchBlockers, timeAgo, updateBlockerStatus, type Blocker } from "@/lib/dashboard";
+import {
+  createBlocker,
+  fetchBlockers,
+  timeAgo,
+  updateBlockerStatus,
+  type Blocker,
+} from "@/lib/dashboard";
 import { fetchMyTeams, fetchTeams } from "@/lib/ideas";
 import {
   ACTION_STATUSES,
@@ -22,7 +28,14 @@ import {
   type ActionStatus,
   type BlockerAction,
 } from "@/lib/blockers";
-import { FormActions, Field, Modal, Select, TextInput } from "@/components/manage/crud-ui";
+import {
+  FormActions,
+  Field,
+  Modal,
+  Select,
+  TextArea,
+  TextInput,
+} from "@/components/manage/crud-ui";
 
 export const Route = createFileRoute("/_authenticated/points-bloquants")({
   head: () => ({
@@ -50,6 +63,7 @@ function BlockersPage() {
   const isAdmin = role === "admin";
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [newActionFor, setNewActionFor] = useState<Blocker | null>(null);
+  const [newBlockerOpen, setNewBlockerOpen] = useState(false);
   const blockers = useQuery({ queryKey: ["blockers"], queryFn: fetchBlockers, retry: false });
   const actions = useQuery({
     queryKey: ["blocker-actions"],
@@ -69,6 +83,8 @@ function BlockersPage() {
     retry: false,
   });
   const ctx = { role, managed: mine.data?.managed ?? [] };
+  const creatableTeams = isAdmin ? (teams.data ?? []) : ctx.managed;
+  const canCreate = isAdmin || (role === "manager" && ctx.managed.length > 0);
 
   const onError = (e: unknown) => toast.error((e as Error).message);
   const refresh = () => {
@@ -106,14 +122,26 @@ function BlockersPage() {
       eyebrow="Suivi opérationnel"
       title="Points bloquants"
       actions={
-        <button
-          type="button"
-          aria-haspopup="dialog"
-          onClick={() => setArchiveOpen(true)}
-          className="flex items-center gap-xs rounded px-md py-xs border border-primary bg-transparent text-primary font-label-md text-label-md hover:bg-surface-container"
-        >
-          <Icon name="inventory_2" /> VOIR L'ARCHIVE
-        </button>
+        <div className="flex flex-wrap gap-xs">
+          {canCreate && (
+            <button
+              type="button"
+              aria-haspopup="dialog"
+              onClick={() => setNewBlockerOpen(true)}
+              className="flex items-center gap-xs rounded px-md py-xs bg-primary text-on-primary font-label-md text-label-md"
+            >
+              <Icon name="add" /> NOUVEAU POINT BLOQUANT
+            </button>
+          )}
+          <button
+            type="button"
+            aria-haspopup="dialog"
+            onClick={() => setArchiveOpen(true)}
+            className="flex items-center gap-xs rounded px-md py-xs border border-primary bg-transparent text-primary font-label-md text-label-md hover:bg-surface-container"
+          >
+            <Icon name="inventory_2" /> VOIR L'ARCHIVE
+          </button>
+        </div>
       }
     >
       <section className="bg-surface-container-lowest border border-outline-variant rounded-lg p-md">
@@ -263,6 +291,17 @@ function BlockersPage() {
           })}
         </div>
       </section>
+      {newBlockerOpen && (
+        <NewBlockerModal
+          teams={creatableTeams}
+          sensitiveTeams={isAdmin ? (teams.data ?? []) : []}
+          onClose={() => setNewBlockerOpen(false)}
+          onCreated={() => {
+            setNewBlockerOpen(false);
+            refresh();
+          }}
+        />
+      )}
       {newActionFor && (
         <NewActionModal
           blocker={newActionFor}
@@ -459,5 +498,102 @@ function History({ blockerId }: { blockerId: string }) {
         </ul>
       )}
     </div>
+  );
+}
+
+function NewBlockerModal({
+  teams,
+  sensitiveTeams,
+  onClose,
+  onCreated,
+}: {
+  teams: string[];
+  sensitiveTeams: string[];
+  onClose: () => void;
+  onCreated: () => void;
+}) {
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [department, setDepartment] = useState(teams.length === 1 ? teams[0] : "");
+  const [severity, setSeverity] = useState<string>("moyenne");
+  const [sensitive, setSensitive] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const create = useMutation({
+    mutationFn: createBlocker,
+    onSuccess: () => {
+      toast.success("Point bloquant créé");
+      onCreated();
+    },
+    onError: (e: unknown) => setError((e as Error).message),
+  });
+
+  function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (title.trim().length < 3) return setError("Le titre doit faire au moins 3 caractères.");
+    if (!department) return setError("Choisis l'équipe concernée.");
+    setError(null);
+    create.mutate({
+      title: title.trim(),
+      description: description.trim(),
+      department,
+      severity,
+      status: "OUVERT",
+      sensitive_team: sensitive || null,
+    });
+  }
+
+  return (
+    <Modal title="Nouveau point bloquant" onClose={onClose}>
+      <form onSubmit={submit} className="space-y-sm" noValidate>
+        {error && (
+          <p role="alert" className="text-body-sm text-error">
+            {error}
+          </p>
+        )}
+        <Field label="Titre">
+          <TextInput value={title} maxLength={160} onChange={(e) => setTitle(e.target.value)} />
+        </Field>
+        <Field label="Description">
+          <TextArea
+            rows={3}
+            value={description}
+            maxLength={2000}
+            onChange={(e) => setDescription(e.target.value)}
+          />
+        </Field>
+        <Field label="Équipe concernée">
+          <Select value={department} onChange={(e) => setDepartment(e.target.value)}>
+            <option value="">Choisir une équipe…</option>
+            {teams.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field label="Criticité">
+          <Select value={severity} onChange={(e) => setSeverity(e.target.value)}>
+            {SEVERITIES.map((v) => (
+              <option key={v} value={v}>
+                {severityMeta(v).rank} · {severityMeta(v).label}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        {sensitiveTeams.length > 0 && (
+          <Field label="Sujet sensible : visible des admins et du manager de l'équipe">
+            <Select value={sensitive} onChange={(e) => setSensitive(e.target.value)}>
+              <option value="">Non sensible (visible de tous)</option>
+              {sensitiveTeams.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        )}
+        <FormActions pending={create.isPending} onCancel={onClose} submitLabel="CRÉER" />
+      </form>
+    </Modal>
   );
 }
