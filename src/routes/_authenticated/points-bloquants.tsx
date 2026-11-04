@@ -197,8 +197,7 @@ function BlockersPage() {
                       </span>
                       {b.sensitive_team && (
                         <span className="inline-flex items-center gap-1 rounded border border-outline px-xs py-0.5 text-[11px] font-label-sm">
-                          <Icon name="lock" className="text-[14px]" /> Sensible · visible par{" "}
-                          {b.sensitive_team}
+                          <Icon name="lock" className="text-[14px]" /> Sujet sensible
                         </span>
                       )}
                     </div>
@@ -236,7 +235,7 @@ function BlockersPage() {
 
                 {isAdmin && (
                   <label className="flex flex-wrap items-center gap-xs text-[11px] font-label-sm text-on-surface-variant">
-                    Sujet sensible, visible des admins et du manager de l'équipe :
+                    Sujet sensible, équipe concernée :
                     <select
                       value={b.sensitive_team ?? ""}
                       onChange={(e) =>
@@ -581,7 +580,7 @@ function NewBlockerModal({
           </Select>
         </Field>
         {sensitiveTeams.length > 0 && (
-          <Field label="Sujet sensible : visible des admins et du manager de l'équipe">
+          <Field label="Sujet sensible">
             <Select value={sensitive} onChange={(e) => setSensitive(e.target.value)}>
               <option value="">Non sensible (visible de tous)</option>
               {sensitiveTeams.map((t) => (

@@ -231,7 +231,7 @@ function ManageBlockers() {
                 )}
               </Select>
             </Field>
-            <Field label="Sujet sensible : visible uniquement par" error={errors.sensitive_team}>
+            <Field label="Sujet sensible" error={errors.sensitive_team}>
               <Select
                 value={form.sensitive_team ?? ""}
                 onChange={(e) => setForm({ ...form, sensitive_team: e.target.value || null })}
