@@ -31,7 +31,7 @@ export const levelOf = (n: News): Level =>
 export const publishedAt = (n: News) => n.publish_at ?? n.created_at;
 export const isScheduled = (n: News) =>
   n.status === "publiée" && !!n.publish_at && new Date(n.publish_at).getTime() > Date.now();
-export const isLive = (n: News) => n.status === "publiée" && !isScheduled(n);
+export const isLive = (n: News) => n.status === "publiée" && !n.archived_at && !isScheduled(n);
 export const isFeaturedNow = (n: News) =>
   !!n.pinned && (!n.featured_until || new Date(n.featured_until).getTime() > Date.now());
 export const isFresh = (n: News) =>

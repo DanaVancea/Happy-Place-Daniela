@@ -7,7 +7,6 @@ import { Icon } from "@/components/icon";
 import { BlockerArchive } from "@/components/dashboard-extras";
 import {
   createBlocker,
-  deleteBlocker,
   fetchBlockers,
   timeAgo,
   updateBlockerStatus,
@@ -35,7 +34,6 @@ import {
   type BlockerAction,
 } from "@/lib/blockers";
 import {
-  ConfirmDelete,
   FormActions,
   Field,
   Modal,
@@ -114,9 +112,9 @@ function BlockersPage() {
     onError,
   });
   const removeBlocker = useMutation({
-    mutationFn: (id: string) => deleteBlocker(id),
+    mutationFn: (id: string) => archiveBlocker(id),
     onSuccess: () => {
-      toast.success("Point bloquant supprimé");
+      toast.success("Point bloquant supprimé : il est dans l'archive");
       setBlockerToDelete(null);
       refresh();
     },
@@ -415,12 +413,29 @@ function BlockersPage() {
         />
       )}
       {blockerToDelete && (
-        <ConfirmDelete
-          label={blockerToDelete.title}
-          pending={removeBlocker.isPending}
-          onCancel={() => setBlockerToDelete(null)}
-          onConfirm={() => removeBlocker.mutate(blockerToDelete.id)}
-        />
+        <Modal title="Supprimer ce point bloquant" onClose={() => setBlockerToDelete(null)}>
+          <p className="font-body-md text-on-surface">
+            <strong className="text-primary">{blockerToDelete.title}</strong> disparaît de la liste
+            et va dans l'archive, où il reste consultable.
+          </p>
+          <div className="flex justify-end gap-xs pt-sm">
+            <button
+              type="button"
+              onClick={() => setBlockerToDelete(null)}
+              className="px-md py-xs border border-outline text-primary font-label-md text-label-md hover:bg-surface-container"
+            >
+              ANNULER
+            </button>
+            <button
+              type="button"
+              disabled={removeBlocker.isPending}
+              onClick={() => removeBlocker.mutate(blockerToDelete.id)}
+              className="px-lg py-xs bg-error text-on-error font-label-md text-label-md disabled:opacity-50"
+            >
+              SUPPRIMER
+            </button>
+          </div>
+        </Modal>
       )}
       {newBlockerOpen && (
         <NewBlockerModal
