@@ -111,7 +111,6 @@ function BlockersPage() {
     onError,
   });
 
-  const [sortBy, setSortBy] = useState<"criticite" | "equipe">("criticite");
   const [filterSeverity, setFilterSeverity] = useState("");
   const [filterTeam, setFilterTeam] = useState("");
   const teamsInList = [...new Set((blockers.data ?? []).map((b) => b.department))].sort((x, y) =>
@@ -126,12 +125,7 @@ function BlockersPage() {
         (!filterSeverity || x.severity === filterSeverity) &&
         (!filterTeam || x.department === filterTeam),
     )
-    .sort(
-      (x, y) =>
-        (sortBy === "equipe"
-          ? byTeam(x, y) || bySeverity(x, y)
-          : bySeverity(x, y) || byTeam(x, y)) || y.updated_at.localeCompare(x.updated_at),
-    );
+    .sort((x, y) => bySeverity(x, y) || byTeam(x, y) || y.updated_at.localeCompare(x.updated_at));
 
   return (
     <AppShell
@@ -165,17 +159,6 @@ function BlockersPage() {
       <section className="bg-surface-container-lowest border border-outline-variant rounded-lg p-md">
         <div className="space-y-sm">
           <div className="flex flex-wrap items-end gap-sm">
-            <label className="text-[11px] font-label-sm text-on-surface-variant uppercase">
-              Trier par
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as "criticite" | "equipe")}
-                className="block mt-1 bg-card border border-outline-variant rounded px-xs py-1 text-body-sm normal-case"
-              >
-                <option value="criticite">Criticité</option>
-                <option value="equipe">Équipe concernée</option>
-              </select>
-            </label>
             <label className="text-[11px] font-label-sm text-on-surface-variant uppercase">
               Criticité
               <select
