@@ -17,9 +17,18 @@
 -- À exécuter ensuite : select * from private.run_smoke_tests();  (tout doit être ok = true)
 
 -- 1. Criticité à 4 niveaux ----------------------------------------------------
-ALTER TYPE public.blocker_severity RENAME VALUE 'critical' TO 'critique';
-ALTER TYPE public.blocker_severity RENAME VALUE 'warning' TO 'moyenne';
-ALTER TYPE public.blocker_severity RENAME VALUE 'info' TO 'faible';
+-- Renommages sans erreur si la migration est rejouée.
+DO $$
+DECLARE
+  _pair text[];
+BEGIN
+  FOREACH _pair SLICE 1 IN ARRAY ARRAY[['critical', 'critique'], ['warning', 'moyenne'], ['info', 'faible']] LOOP
+    IF EXISTS (SELECT 1 FROM pg_enum e JOIN pg_type t ON t.oid = e.enumtypid
+               WHERE t.typname = 'blocker_severity' AND e.enumlabel = _pair[1]) THEN
+      EXECUTE format('ALTER TYPE public.blocker_severity RENAME VALUE %L TO %L', _pair[1], _pair[2]);
+    END IF;
+  END LOOP;
+END $$;
 ALTER TYPE public.blocker_severity ADD VALUE IF NOT EXISTS 'élevée' BEFORE 'moyenne';
 ALTER TABLE public.blockers ALTER COLUMN severity SET DEFAULT 'moyenne'::public.blocker_severity;
 
