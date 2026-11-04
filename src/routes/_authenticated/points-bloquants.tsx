@@ -246,8 +246,8 @@ function BlockersPage() {
                       }
                       className="bg-card border border-outline-variant rounded px-xs py-0.5"
                     >
-                      <option value="public">Public (visible de tous)</option>
-                      <option value="prive">Privé (manager de l'équipe et admins)</option>
+                      <option value="public">Public</option>
+                      <option value="prive">Privé</option>
                     </select>
                   </label>
                 )}
@@ -584,8 +584,8 @@ function NewBlockerModal({
               value={isPrivate ? "prive" : "public"}
               onChange={(e) => setIsPrivate(e.target.value === "prive")}
             >
-              <option value="public">Public (visible de tous)</option>
-              <option value="prive">Privé (manager de l'équipe et admins)</option>
+              <option value="public">Public</option>
+              <option value="prive">Privé</option>
             </Select>
           </Field>
         )}

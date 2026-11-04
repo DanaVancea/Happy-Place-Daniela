@@ -254,8 +254,8 @@ function ManageBlockers() {
                   })
                 }
               >
-                <option value="public">Public (visible de tous)</option>
-                <option value="prive">Privé (manager de l'équipe et admins)</option>
+                <option value="public">Public</option>
+                <option value="prive">Privé</option>
               </Select>
             </Field>
             <FormActions pending={save.isPending} onCancel={close} />

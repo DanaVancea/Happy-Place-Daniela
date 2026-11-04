@@ -17,7 +17,8 @@ export const Route = createFileRoute("/_authenticated/manage")({
       { property: "og:title", content: "Gestion des données — Happy Place" },
       {
         property: "og:description",
-        content: "Gestion de l'activité d'un cabinet de recrutement spécialisé dans l'IT et le digital.",
+        content:
+          "Gestion de l'activité d'un cabinet de recrutement spécialisé dans l'IT et le digital.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
