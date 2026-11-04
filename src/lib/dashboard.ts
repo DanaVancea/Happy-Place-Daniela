@@ -376,6 +376,9 @@ export type MetricInput = {
   label: string;
   value: number;
   unit: string | null;
+  definition: string | null;
+  target: number | null;
+  direction: "hausse" | "baisse";
 };
 
 export async function fetchAllNews(): Promise<News[]> {

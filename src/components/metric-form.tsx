@@ -7,6 +7,8 @@ import {
   Field,
   FormActions,
   Modal,
+  Select,
+  TextArea,
   TextInput,
 } from "@/components/manage/crud-ui";
 import { createMetric, deleteMetric, updateMetricRow, type Metric } from "@/lib/dashboard";
@@ -20,6 +22,9 @@ export function MetricForm({ metric, onClose }: { metric: Metric | null; onClose
     label: metric?.label ?? "",
     value: metric ? String(metric.value) : "",
     unit: metric?.unit ?? "",
+    definition: metric?.definition ?? "",
+    target: metric?.target != null ? String(metric.target) : "",
+    direction: (metric?.direction ?? "hausse") as "hausse" | "baisse",
   });
   const [errors, setErrors] = useState<FieldErrors>({});
   const save = useMutation({
@@ -39,7 +44,12 @@ export function MetricForm({ metric, onClose }: { metric: Metric | null; onClose
   function submit(e: React.FormEvent) {
     e.preventDefault();
     const raw = form.value.trim().replace(",", ".");
+    const rawTarget = form.target.trim().replace(",", ".");
     const res = validate(metricSchema, {
+      definition: form.definition.trim() === "" ? null : form.definition,
+      target:
+        rawTarget === "" ? null : Number.isNaN(Number(rawTarget)) ? Number.NaN : Number(rawTarget),
+      direction: form.direction,
       key: form.key,
       label: form.label,
       value: raw === "" || Number.isNaN(Number(raw)) ? Number.NaN : Number(raw),
@@ -84,6 +94,30 @@ export function MetricForm({ metric, onClose }: { metric: Metric | null; onClose
             placeholder="%"
             onChange={(e) => setForm({ ...form, unit: e.target.value })}
           />
+        </Field>
+        <Field label="Description : comment lire ce chiffre (optionnel)" error={errors.definition}>
+          <TextArea
+            rows={2}
+            value={form.definition}
+            maxLength={300}
+            onChange={(e) => setForm({ ...form, definition: e.target.value })}
+          />
+        </Field>
+        <Field label="Cible (optionnel) : sert à dire si l'indicateur est atteint" error={errors.target}>
+          <TextInput
+            value={form.target}
+            inputMode="decimal"
+            onChange={(e) => setForm({ ...form, target: e.target.value })}
+          />
+        </Field>
+        <Field label="Sens" error={errors.direction}>
+          <Select
+            value={form.direction}
+            onChange={(e) => setForm({ ...form, direction: e.target.value as "hausse" | "baisse" })}
+          >
+            <option value="hausse">Plus haut = mieux (atteint si la valeur ≥ cible)</option>
+            <option value="baisse">Plus bas = mieux (atteint si la valeur ≤ cible)</option>
+          </Select>
         </Field>
         <FormActions pending={save.isPending} onCancel={onClose} />
       </form>
