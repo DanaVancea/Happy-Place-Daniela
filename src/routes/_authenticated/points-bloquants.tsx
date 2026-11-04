@@ -15,6 +15,7 @@ import {
 import { fetchMyTeams, fetchTeams } from "@/lib/ideas";
 import {
   ACTION_STATUSES,
+  archiveBlocker,
   SEVERITIES,
   canEditBlocker,
   createBlockerAction,
@@ -92,6 +93,7 @@ function BlockersPage() {
     qc.invalidateQueries({ queryKey: ["blocker-actions"] });
     qc.invalidateQueries({ queryKey: ["blocker-history"] });
   };
+  const archive = useMutation({ mutationFn: archiveBlocker, onSuccess: refresh, onError });
   const setBlocker = useMutation({ mutationFn: updateBlockerStatus, onSuccess: refresh, onError });
   const setSettings = useMutation({
     mutationFn: updateBlockerSettings,
@@ -209,28 +211,39 @@ function BlockersPage() {
                       Mis à jour {timeAgo(b.updated_at)}
                     </span>
                   </div>
-                  {editable ? (
-                    <select
-                      aria-label={`Statut de ${b.title}`}
-                      value={b.status}
-                      onChange={(e) => setBlocker.mutate({ id: b.id, status: e.target.value })}
-                      className="bg-transparent border border-outline-variant rounded text-xs font-label-sm text-on-surface-variant cursor-pointer"
-                    >
-                      <option>OUVERT</option>
-                      <option>EN COURS</option>
-                      <option>SURVEILLANCE</option>
-                      <option
-                        disabled={b.status === "OUVERT"}
-                        title={b.status === "OUVERT" ? "Passe d'abord par EN COURS" : undefined}
+                  <div className="flex flex-col items-end gap-xs">
+                    {editable ? (
+                      <select
+                        aria-label={`Statut de ${b.title}`}
+                        value={b.status}
+                        onChange={(e) => setBlocker.mutate({ id: b.id, status: e.target.value })}
+                        className="bg-transparent border border-outline-variant rounded text-xs font-label-sm text-on-surface-variant cursor-pointer"
                       >
-                        RÉSOLU
-                      </option>
-                    </select>
-                  ) : (
-                    <span className="text-xs font-label-sm text-on-surface-variant">
-                      {b.status}
-                    </span>
-                  )}
+                        <option>OUVERT</option>
+                        <option>EN COURS</option>
+                        <option>SURVEILLANCE</option>
+                        <option
+                          disabled={b.status === "OUVERT"}
+                          title={b.status === "OUVERT" ? "Passe d'abord par EN COURS" : undefined}
+                        >
+                          RÉSOLU
+                        </option>
+                      </select>
+                    ) : (
+                      <span className="text-xs font-label-sm text-on-surface-variant">
+                        {b.status}
+                      </span>
+                    )}
+                    {editable && b.status === "RÉSOLU" && (
+                      <button
+                        type="button"
+                        onClick={() => archive.mutate(b.id)}
+                        className="flex items-center gap-1 px-sm py-0.5 border border-primary text-primary font-label-sm text-label-sm hover:bg-surface-container"
+                      >
+                        <Icon name="inventory_2" className="text-[16px]" /> ARCHIVER
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {isAdmin && (
