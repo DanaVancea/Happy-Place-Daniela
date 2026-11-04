@@ -12,6 +12,7 @@ import { NewsEditor } from "@/components/news-editor";
 import { NewsReader } from "@/components/news-reader";
 import {
   deleteDraftNews,
+  setNewsArchived,
   processAttachmentDeletionQueue,
   fetchMetrics,
   fetchNews,
@@ -123,6 +124,14 @@ function NewsPage() {
     },
     onError,
   });
+  const archive = useMutation({
+    mutationFn: (v: { id: string; archived: boolean }) => setNewsArchived(v.id, v.archived),
+    onSuccess: (_d, v) => {
+      toast.success(v.archived ? "Actualité archivée" : "Actualité restaurée");
+      qc.invalidateQueries({ queryKey: ["news"] });
+    },
+    onError,
+  });
   const remove = useMutation({
     mutationFn: (n: News) => deleteDraftNews(n.id, n.image_path),
     onSuccess: () => {
@@ -171,8 +180,9 @@ function NewsPage() {
     setVisible(PAGE_SIZE);
   };
   const query = filters.query;
+  const archivedRows = all.filter((n) => !!n.archived_at).sort(byDateDesc);
   const adminRows = all
-    .filter((n) => !isLive(n))
+    .filter((n) => !isLive(n) && !n.archived_at)
     .sort((a, b) => Number(isScheduled(a)) - Number(isScheduled(b)) || byDateDesc(a, b));
   const publishedRows = [...live].sort(byDateDesc).slice(0, 10);
   const more = (list: News[]) => list.slice(0, visible);
@@ -610,6 +620,16 @@ function NewsPage() {
                       >
                         Supprimer
                       </button>
+                      {!isScheduled(n) && n.status === "publiée" && (
+                        <button
+                          type="button"
+                          className="font-label-sm text-label-sm text-on-surface-variant hover:text-primary"
+                          disabled={archive.isPending}
+                          onClick={() => archive.mutate({ id: n.id, archived: true })}
+                        >
+                          Archiver
+                        </button>
+                      )}
                       {n.status === "brouillon" && (
                         <button
                           type="button"
@@ -624,6 +644,49 @@ function NewsPage() {
                           Publier
                         </button>
                       )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <h3 className="font-headline-sm text-headline-sm text-primary pt-sm">
+                Actualités archivées ({archivedRows.length})
+              </h3>
+              {archivedRows.length === 0 && (
+                <p className="text-body-sm text-on-surface-variant italic">
+                  Aucune actualité archivée.
+                </p>
+              )}
+              <div className="space-y-xs">
+                {archivedRows.map((n) => (
+                  <div
+                    key={n.id}
+                    className="flex flex-wrap items-center justify-between gap-sm rounded bg-surface-container p-sm"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-body-md font-bold text-primary wrap-anywhere">{n.title}</p>
+                      <p className="font-label-sm text-label-sm text-on-surface-variant">
+                        Archivée • Par {n.author}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-sm shrink-0">
+                      <button
+                        type="button"
+                        className="font-label-sm text-label-sm text-on-surface-variant hover:text-primary"
+                        disabled={archive.isPending}
+                        onClick={() => archive.mutate({ id: n.id, archived: false })}
+                      >
+                        Restaurer
+                      </button>
+                      <button
+                        type="button"
+                        className="font-label-sm text-label-sm text-error"
+                        disabled={remove.isPending}
+                        onClick={() =>
+                          window.confirm(`Supprimer définitivement « ${n.title} » ?`) && remove.mutate(n)
+                        }
+                      >
+                        Supprimer
+                      </button>
                     </div>
                   </div>
                 ))}

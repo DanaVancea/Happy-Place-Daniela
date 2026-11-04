@@ -344,6 +344,7 @@ export type Database = {
           author: string
           department: string | null
           featured_until: string | null
+          archived_at: string | null
           level: string
           pinned: boolean
           publish_at: string | null
@@ -362,6 +363,7 @@ export type Database = {
           author?: string
           department?: string | null
           featured_until?: string | null
+          archived_at?: string | null
           level?: string
           pinned?: boolean
           publish_at?: string | null
@@ -380,6 +382,7 @@ export type Database = {
           author?: string
           department?: string | null
           featured_until?: string | null
+          archived_at?: string | null
           level?: string
           pinned?: boolean
           publish_at?: string | null

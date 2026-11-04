@@ -24,6 +24,7 @@ export type News = {
   pinned?: boolean;
   publish_at?: string | null;
   featured_until?: string | null;
+  archived_at?: string | null;
 };
 
 export type Submission = {
@@ -167,6 +168,17 @@ export async function publishDraftNews(id: string) {
     .select("id");
   if (error) throw error;
   if (!data?.length) throw new Error("Vous n'avez pas le droit de publier cette actualité.");
+}
+
+/** Archive une actualité (admin) ou la remet dans le fil. */
+export async function setNewsArchived(id: string, archived: boolean) {
+  const { data, error } = await db
+    .from("news")
+    .update({ archived_at: archived ? new Date().toISOString() : null })
+    .eq("id", id)
+    .select("id");
+  if (error) throw error;
+  if (!data?.length) throw new Error("Vous n'avez pas le droit d'archiver cette actualité.");
 }
 
 export async function deleteDraftNews(id: string, imagePath?: string | null) {
