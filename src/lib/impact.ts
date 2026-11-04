@@ -38,9 +38,11 @@ export type ImpactData = {
   teams_total: number;
   days: number;
   wau: number;
+  wau_connected: number;
+  mau_connected: number;
   mau: number;
-  weekly: Dated<{ active: number }>[];
-  monthly: Dated<{ active: number }>[];
+  weekly: Dated<{ active: number; connected: number }>[];
+  monthly: Dated<{ active: number; connected: number }>[];
   pages: { page: TrackedPage; views: number; visitors: number }[];
   pages_since: string | null;
   ideas_monthly: { month: string; team: string; count: number }[];
@@ -48,10 +50,8 @@ export type ImpactData = {
   teams: string[];
   feedback: {
     responses: number;
-    average: number | null;
-    distribution: Record<string, number>;
     this_month: number;
-    monthly: Dated<{ count: number; average: number | null }>[];
+    monthly: Dated<{ count: number }>[];
   };
 };
 
@@ -61,23 +61,21 @@ export async function fetchImpact(days: number): Promise<ImpactData> {
   return data as ImpactData;
 }
 
-export async function submitFeedback(score: number, comment: string): Promise<void> {
-  const { error } = await db.rpc("submit_feedback", { _score: score, _comment: comment });
+export async function submitFeedback(comment: string): Promise<void> {
+  const { error } = await db.rpc("submit_feedback", { _comment: comment });
   if (error) throw error;
 }
 
 export type FeedbackRow = {
   period: string;
-  question: string;
-  score: number;
-  comment: string | null;
+  comment: string;
   team: string | null;
 };
 
 export async function fetchFeedbackRows(): Promise<FeedbackRow[]> {
   const { data, error } = await db
     .from("feedback_responses")
-    .select("period, question, score, comment, team")
+    .select("period, comment, team")
     .order("period", { ascending: false });
   if (error) throw error;
   return (data ?? []) as FeedbackRow[];
@@ -91,10 +89,8 @@ function csvCell(v: string | number | null): string {
 }
 
 export function feedbackToCsv(rows: FeedbackRow[]): string {
-  const head = ["Mois", "Question", "Note", "Commentaire", "Équipe"];
-  const lines = rows.map((r) =>
-    [r.period.slice(0, 7), r.question, r.score, r.comment, r.team].map(csvCell).join(";"),
-  );
+  const head = ["Mois", "Avis", "Équipe"];
+  const lines = rows.map((r) => [r.period.slice(0, 7), r.comment, r.team].map(csvCell).join(";"));
   // BOM + séparateur « ; » : s'ouvre correctement dans Excel en français.
   return "﻿" + [head.map(csvCell).join(";"), ...lines].join("\r\n");
 }

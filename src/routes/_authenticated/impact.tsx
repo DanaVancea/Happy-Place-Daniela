@@ -171,7 +171,6 @@ function Content({
     label: monthLabel(m),
     value: d.ideas_monthly.filter((r) => r.month === m).reduce((s, r) => s + r.count, 0),
   }));
-  const dist = d.feedback.distribution ?? {};
 
   return (
     <>
@@ -179,12 +178,12 @@ function Content({
         <Kpi
           label="Actifs sur 7 jours"
           value={`${pct(d.wau, d.total_users)} %`}
-          sub={`${d.wau} sur ${d.total_users} collaborateurs`}
+          sub={`${d.wau} sur ${d.total_users} · connectés : ${d.wau_connected}`}
         />
         <Kpi
           label="Actifs sur 30 jours"
           value={`${pct(d.mau, d.total_users)} %`}
-          sub={`${d.mau} sur ${d.total_users} collaborateurs`}
+          sub={`${d.mau} sur ${d.total_users} · connectés : ${d.mau_connected}`}
         />
         <Kpi
           label="Équipes qui déposent des idées"
@@ -192,27 +191,37 @@ function Content({
           sub={`${last?.teams_with_ideas ?? 0} sur ${d.teams_total} équipes ce mois-ci`}
         />
         <Kpi
-          label="Note moyenne"
-          value={d.feedback.average == null ? "–" : `${Number(d.feedback.average).toFixed(1)} / 5`}
-          sub={`${d.feedback.responses} avis au total`}
+          label="Avis reçus"
+          value={String(d.feedback.responses)}
+          sub={`dont ${d.feedback.this_month} ce mois-ci`}
         />
       </div>
       <p className="font-body-sm text-on-surface-variant">
-        Est « actif » un collaborateur qui a fait une action (idée, vote, commentaire, point
-        bloquant, « Lu » ou favori d'une actualité, avis) : ouvrir l'application ne suffit pas.
+        « Connecté » : a consulté au moins une page suivie ou fait une action. « Actif » : a fait
+        une action (idée, vote, commentaire, point bloquant, « Lu » ou favori d'une actualité, avis)
+        ; ouvrir l'application ne suffit pas. Les pourcentages sont rapportés à tous les comptes
+        (collaborateurs, managers et admins) dont le départ n'est pas passé.
       </p>
 
       <div className="grid gap-md md:grid-cols-2">
         <Card title="Actifs par semaine" hint="8 dernières semaines (début de semaine)">
           <Bars
-            rows={d.weekly.map((w) => ({ label: weekLabel(w.start), value: w.active }))}
+            rows={d.weekly.map((w) => ({
+              label: weekLabel(w.start),
+              value: w.active,
+              hint: `/ ${w.connected} connectés`,
+            }))}
             max={Math.max(1, d.total_users)}
             unit=""
           />
         </Card>
         <Card title="Actifs par mois" hint="6 derniers mois">
           <Bars
-            rows={d.monthly.map((m) => ({ label: monthLabel(m.start), value: m.active }))}
+            rows={d.monthly.map((m) => ({
+              label: monthLabel(m.start),
+              value: m.active,
+              hint: `/ ${m.connected} connectés`,
+            }))}
             max={Math.max(1, d.total_users)}
           />
         </Card>
@@ -302,24 +311,12 @@ function Content({
 
       <Card
         title="Avis des collaborateurs"
-        hint="« Happy Place t'aide-t-il au quotidien ? » · anonyme, sans lien avec une personne"
+        hint="Texte libre, anonyme : aucun nom n'est associé à un avis"
       >
-        <div className="grid gap-md md:grid-cols-2">
-          <Bars
-            rows={[5, 4, 3, 2, 1].map((n) => ({
-              label: `${n} sur 5`,
-              value: dist[String(n)] ?? 0,
-            }))}
-          />
-          <Bars
-            rows={d.feedback.monthly.map((m) => ({
-              label: monthLabel(m.start),
-              value: m.average == null ? 0 : Number(m.average),
-              hint: `(${m.count} avis)`,
-            }))}
-            max={5}
-          />
-        </div>
+        <Bars
+          rows={d.feedback.monthly.map((m) => ({ label: monthLabel(m.start), value: m.count }))}
+        />
+        <FeedbackList />
         <div>
           <button
             type="button"
@@ -332,5 +329,30 @@ function Content({
         </div>
       </Card>
     </>
+  );
+}
+
+/** Derniers avis, les plus récents d'abord (lecture réservée aux admins par RLS). */
+function FeedbackList() {
+  const q = useQuery({ queryKey: ["feedback_rows"], queryFn: fetchFeedbackRows, retry: false });
+  const rows = (q.data ?? []).slice(0, 30);
+  if (q.isLoading) return <p className="font-body-sm text-on-surface-variant">Chargement…</p>;
+  if (rows.length === 0) {
+    return (
+      <p className="font-body-sm italic text-on-surface-variant">Aucun avis pour l'instant.</p>
+    );
+  }
+  return (
+    <ul className="max-h-96 space-y-xs overflow-y-auto">
+      {rows.map((r, i) => (
+        <li key={i} className="border border-outline-variant bg-surface-container-lowest p-sm">
+          <p className="font-body-md whitespace-pre-line wrap-anywhere">{r.comment}</p>
+          <p className="font-label-sm text-label-sm text-on-surface-variant">
+            {monthLabel(r.period)}
+            {r.team ? ` · ${r.team}` : ""}
+          </p>
+        </li>
+      ))}
+    </ul>
   );
 }

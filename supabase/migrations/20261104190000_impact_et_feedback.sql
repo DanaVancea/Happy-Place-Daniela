@@ -6,10 +6,12 @@
 --     création ou modification d'un point bloquant ou d'une action, « Lu » ou favori d'une actu,
 --     envoi d'un feedback) : ouvrir l'appli ne suffit pas. Rapporté au nombre de collaborateurs
 --     (comptes dont le départ n'est pas passé) ;
+--   * « connecté » = est passé sur au moins une page suivie (ou a fait une action) sur la période :
+--     on distingue ainsi les personnes qui viennent seulement regarder de celles qui sont actives ;
 --   * pages les plus consultées : un compteur par personne, page et jour (Actus, Boîte à idées,
 --     Points bloquants, Trombi) ; seuls des totaux sont lisibles, par les admins ;
---   * feedback : un bouton « Donner mon avis » toujours visible sur l'accueil (note de 1 à 5 +
---     commentaire libre), utilisable autant de fois qu'on veut pour collecter un maximum de retours
+--   * feedback : un bouton « Donner mon avis » toujours visible sur l'accueil (texte libre :
+--     avis, suggestion ; pas de note pour le moment), utilisable autant de fois qu'on veut pour collecter un maximum de retours
 --     au début. Les réponses sont ANONYMES : aucune colonne ne relie une réponse à une personne
 --     (note, commentaire, équipe, mois) ;
 --   * seuls les admins lisent les réponses (RLS) et les exportent en CSV depuis la page Impact.
@@ -123,16 +125,20 @@ END $$;
 REVOKE ALL ON FUNCTION public.track_page_view(text) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.track_page_view(text) TO authenticated;
 
+-- Présence : un jour de connexion = une page suivie vue ou une action (jamais exposée directement).
+CREATE OR REPLACE VIEW private.user_presence AS
+  SELECT user_id, day FROM public.user_activity
+  UNION
+  SELECT user_id, day FROM public.page_views;
+REVOKE ALL ON private.user_presence FROM PUBLIC, anon, authenticated;
+
 -- 3. Feedback : bouton toujours visible sur l'accueil, réponses anonymes ----------------
 CREATE TABLE IF NOT EXISTS public.feedback_responses (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   period date NOT NULL,                      -- 1er jour du mois de l'envoi (pas d'horodatage précis)
-  question text NOT NULL DEFAULT 'Happy Place t''aide-t-il au quotidien ?',
-  score smallint NOT NULL,
-  comment text,
+  comment text NOT NULL,
   team text,                                 -- équipe au moment de l'envoi (texte, pas de clé étrangère)
-  CONSTRAINT feedback_responses_score_check CHECK (score BETWEEN 1 AND 5),
-  CONSTRAINT feedback_responses_comment_length CHECK (comment IS NULL OR char_length(comment) <= 1000),
+  CONSTRAINT feedback_responses_comment_length CHECK (char_length(comment) BETWEEN 3 AND 1000),
   CONSTRAINT feedback_responses_period_check CHECK (extract(day FROM period) = 1)
 );
 CREATE INDEX IF NOT EXISTS feedback_responses_period_idx ON public.feedback_responses (period);
@@ -145,7 +151,7 @@ GRANT ALL ON public.feedback_responses TO service_role;
 -- Aucune écriture directe : uniquement public.submit_feedback.
 
 -- Chacun peut donner son avis autant de fois qu'il veut (on veut un maximum de retours au début).
-CREATE OR REPLACE FUNCTION public.submit_feedback(_score integer, _comment text DEFAULT NULL)
+CREATE OR REPLACE FUNCTION public.submit_feedback(_comment text)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, private AS $$
 DECLARE
   _c text := nullif(btrim(coalesce(_comment, '')), '');
@@ -154,26 +160,24 @@ BEGIN
   IF auth.uid() IS NULL OR NOT coalesce(private.is_allowed(), false) THEN
     RAISE EXCEPTION 'Connexion requise.' USING ERRCODE = '42501';
   END IF;
-  IF _score IS NULL OR _score < 1 OR _score > 5 THEN
-    RAISE EXCEPTION 'Choisis une note de 1 à 5.';
+  IF _c IS NULL OR char_length(_c) < 3 THEN
+    RAISE EXCEPTION 'Écris quelques mots pour donner ton avis.';
   END IF;
-  IF _c IS NOT NULL AND char_length(_c) > 1000 THEN
-    RAISE EXCEPTION 'Le commentaire est limité à 1000 caractères.';
+  IF char_length(_c) > 1000 THEN
+    RAISE EXCEPTION 'Ton avis est limité à 1000 caractères.';
   END IF;
-  IF _c IS NOT NULL THEN
-    _w := private.first_blocked_word(_c);
-    IF _w IS NOT NULL THEN
-      RAISE EXCEPTION 'Le commentaire contient un mot non autorisé : « % ».', _w;
-    END IF;
+  _w := private.first_blocked_word(_c);
+  IF _w IS NOT NULL THEN
+    RAISE EXCEPTION 'Ton avis contient un mot non autorisé : « % ».', _w;
   END IF;
-  INSERT INTO public.feedback_responses (period, score, comment, team)
-  VALUES (date_trunc('month', private.today_fr())::date, _score, _c, private.my_team());
+  INSERT INTO public.feedback_responses (period, comment, team)
+  VALUES (date_trunc('month', private.today_fr())::date, _c, private.my_team());
   INSERT INTO public.user_activity (user_id, kind, day)
   VALUES (auth.uid(), 'feedback', private.today_fr())
   ON CONFLICT DO NOTHING;
 END $$;
-REVOKE ALL ON FUNCTION public.submit_feedback(integer, text) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.submit_feedback(integer, text) TO authenticated;
+REVOKE ALL ON FUNCTION public.submit_feedback(text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.submit_feedback(text) TO authenticated;
 
 -- 4. Tableau de bord Impact : agrégats seulement, admins seulement -------------------
 CREATE OR REPLACE FUNCTION public.impact_dashboard(_days integer DEFAULT 30)
@@ -200,17 +204,25 @@ BEGIN
     'days', _days_c,
     -- Actifs sur 7 jours glissants et 30 jours glissants
     'wau', (SELECT count(DISTINCT user_id) FROM public.user_activity WHERE day > _today - 7),
+    'wau_connected', (SELECT count(DISTINCT user_id) FROM private.user_presence WHERE day > _today - 7),
+    'mau_connected', (SELECT count(DISTINCT user_id) FROM private.user_presence WHERE day > _today - 30),
     'mau', (SELECT count(DISTINCT user_id) FROM public.user_activity WHERE day > _today - 30),
     -- 8 dernières semaines (lundi de la semaine)
     'weekly', (
       SELECT coalesce(jsonb_agg(jsonb_build_object('start', w.d, 'active', (
         SELECT count(DISTINCT a.user_id) FROM public.user_activity a
+         WHERE a.day >= w.d AND a.day < w.d + 7),
+        'connected', (
+        SELECT count(DISTINCT a.user_id) FROM private.user_presence a
          WHERE a.day >= w.d AND a.day < w.d + 7)) ORDER BY w.d), '[]'::jsonb)
       FROM (SELECT (date_trunc('week', _today)::date - 7 * g) AS d FROM generate_series(0, 7) g) w),
     -- 6 derniers mois
     'monthly', (
       SELECT coalesce(jsonb_agg(jsonb_build_object('start', m.d, 'active', (
         SELECT count(DISTINCT a.user_id) FROM public.user_activity a
+         WHERE a.day >= m.d AND a.day < (m.d + interval '1 month')::date),
+        'connected', (
+        SELECT count(DISTINCT a.user_id) FROM private.user_presence a
          WHERE a.day >= m.d AND a.day < (m.d + interval '1 month')::date)) ORDER BY m.d), '[]'::jsonb)
       FROM (SELECT (_month0 - make_interval(months => g))::date AS d FROM generate_series(0, 5) g) m),
     -- Pages vues sur la période demandée
@@ -240,20 +252,13 @@ BEGIN
         ) ORDER BY m.d), '[]'::jsonb)
       FROM (SELECT (_month0 - make_interval(months => g))::date AS d FROM generate_series(0, 5) g) m),
     'teams', (SELECT coalesce(jsonb_agg(t.name ORDER BY t.name), '[]'::jsonb) FROM public.teams t WHERE NOT t.is_reserved),
-    -- Sondage
+    -- Avis
     'feedback', jsonb_build_object(
       'responses', (SELECT count(*) FROM public.feedback_responses),
-      'average', (SELECT round(avg(score), 2) FROM public.feedback_responses),
-      'distribution', (
-        SELECT jsonb_object_agg(s.score::text, coalesce(c.n, 0))
-        FROM generate_series(1, 5) s(score)
-        LEFT JOIN (SELECT score, count(*)::int AS n FROM public.feedback_responses GROUP BY score) c
-               ON c.score = s.score),
       'this_month', (SELECT count(*) FROM public.feedback_responses WHERE period = _month0),
       'monthly', (
         SELECT coalesce(jsonb_agg(jsonb_build_object('start', m.d,
-                 'count', (SELECT count(*) FROM public.feedback_responses r WHERE r.period = m.d),
-                 'average', (SELECT round(avg(r.score), 2) FROM public.feedback_responses r WHERE r.period = m.d))
+                 'count', (SELECT count(*) FROM public.feedback_responses r WHERE r.period = m.d))
                ORDER BY m.d), '[]'::jsonb)
         FROM (SELECT (_month0 - make_interval(months => g))::date AS d FROM generate_series(0, 5) g) m))
   ) INTO _result;
