@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -99,12 +99,6 @@ function NewsPage() {
       .catch(() => toast.error("La suppression des documents échus a échoué."))
       .finally(() => qc.invalidateQueries({ queryKey: ["attachment_deletion_queue"] }));
   }, [isAdmin, qc]);
-  const [editor, setEditor] = useState<{ news: News | null } | null>(null);
-  // L'éditeur est dans l'espace admin, en bas de page : on y amène la personne à l'ouverture.
-  useEffect(() => {
-    if (editor) document.getElementById("admin-titre")?.scrollIntoView({ behavior: "smooth" });
-  }, [editor]);
-
   const news = useQuery({ queryKey: ["news"], queryFn: fetchNews, retry: false });
   const metrics = useQuery({ queryKey: ["metrics"], queryFn: fetchMetrics, retry: false });
   const history = useQuery({
@@ -115,31 +109,6 @@ function NewsPage() {
   const marks = useNewsMarks(isAdmin);
   const [lateFirst, setLateFirst] = useState(false);
   const onError = (e: unknown) => toast.error((e as Error).message);
-
-  const publish = useMutation({
-    mutationFn: publishDraftNews,
-    onSuccess: () => {
-      toast.success("Actualité publiée");
-      qc.invalidateQueries({ queryKey: ["news"] });
-    },
-    onError,
-  });
-  const archive = useMutation({
-    mutationFn: (v: { id: string; archived: boolean }) => setNewsArchived(v.id, v.archived),
-    onSuccess: (_d, v) => {
-      toast.success(v.archived ? "Actualité archivée" : "Actualité restaurée");
-      qc.invalidateQueries({ queryKey: ["news"] });
-    },
-    onError,
-  });
-  const remove = useMutation({
-    mutationFn: (n: News) => deleteDraftNews(n.id, n.image_path),
-    onSuccess: () => {
-      toast.success("Actualité supprimée");
-      qc.invalidateQueries({ queryKey: ["news"] });
-    },
-    onError,
-  });
 
   const all = useMemo(() => news.data ?? [], [news.data]);
   const live = useMemo(() => all.filter(isLive), [all]);
@@ -180,11 +149,7 @@ function NewsPage() {
     setVisible(PAGE_SIZE);
   };
   const query = filters.query;
-  const archivedRows = all.filter((n) => !!n.archived_at).sort(byDateDesc);
-  const adminRows = all
-    .filter((n) => !isLive(n) && !n.archived_at)
-    .sort((a, b) => Number(isScheduled(a)) - Number(isScheduled(b)) || byDateDesc(a, b));
-  const publishedRows = [...live].sort(byDateDesc).slice(0, 10);
+  const draftCount = all.filter((n) => !isLive(n) && !n.archived_at).length;
   const more = (list: News[]) => list.slice(0, visible);
 
   const grid = (list: News[]) => (
@@ -357,14 +322,29 @@ function NewsPage() {
         {/* Haut de la colonne de droite : bouton « Nouvelle actualité », titre et résumé */}
         <div className="contents">
           {isAdmin && (
-            <button
-              type="button"
-              onClick={() => setEditor({ news: null })}
-              disabled={!!editor && !editor.news}
-              className="flex w-full items-center justify-center gap-xs rounded bg-primary px-md py-xs text-on-primary font-label-md text-label-md disabled:opacity-50 md:col-start-2 md:row-start-1 md:min-h-[3rem] md:self-end"
-            >
-              <Icon name="add" /> NOUVELLE ACTUALITÉ
-            </button>
+            <div className="flex w-full flex-wrap gap-xs md:col-start-2 md:row-start-1 md:min-h-[3rem] md:self-end">
+              <Link
+                to="/gerer-actualites"
+                search={{ nouvelle: true }}
+                className="flex flex-1 items-center justify-center gap-xs rounded bg-primary px-md py-xs text-on-primary font-label-md text-label-md"
+              >
+                <Icon name="add" /> NOUVELLE ACTUALITÉ
+              </Link>
+              <Link
+                to="/gerer-actualites"
+                className="flex flex-1 items-center justify-center gap-xs rounded border border-primary px-md py-xs text-primary font-label-md text-label-md hover:bg-surface-container"
+              >
+                <Icon name="edit_note" /> GÉRER LES ACTUALITÉS
+                {draftCount > 0 && (
+                  <span
+                    className="rounded bg-secondary-fixed px-xs font-label-sm text-label-sm text-on-secondary"
+                    aria-label={`${draftCount} brouillon${draftCount > 1 ? "s" : ""} ou programmée${draftCount > 1 ? "s" : ""}`}
+                  >
+                    {draftCount}
+                  </span>
+                )}
+              </Link>
+            </div>
           )}
           <div className="space-y-xs md:col-start-2 md:row-start-3">
             <div className="flex items-center justify-between gap-sm">
@@ -496,196 +476,6 @@ function NewsPage() {
                 </section>
               )}
             </>
-          )}
-
-          {/* Espace admin */}
-          {isAdmin && (
-            <section
-              aria-labelledby="admin-titre"
-              className="space-y-sm border-t border-outline-variant pt-md"
-            >
-              <div className="flex items-center justify-between gap-sm">
-                <h2 id="admin-titre" className="font-headline-sm text-headline-sm text-primary">
-                  Espace admin
-                </h2>
-              </div>
-              {editor && (
-                <NewsEditor
-                  key={editor.news?.id ?? "new"}
-                  editing={editor.news}
-                  all={all}
-                  author={myName}
-                  email={myEmail}
-                  myDepartment={myDepartment}
-                  onDone={() => setEditor(null)}
-                />
-              )}
-              <h3 className="font-headline-sm text-headline-sm text-primary pt-sm">
-                Brouillons et actualités programmées ({adminRows.length})
-              </h3>
-              {adminRows.length === 0 && (
-                <p className="text-body-sm text-on-surface-variant italic">
-                  Aucun brouillon ni publication programmée.
-                </p>
-              )}
-              <div className="space-y-xs">
-                {adminRows.map((n) => (
-                  <div
-                    key={n.id}
-                    className="flex flex-wrap items-center justify-between gap-sm rounded bg-surface-container p-sm"
-                  >
-                    <div className="min-w-0">
-                      <p className="font-body-md font-bold text-primary wrap-anywhere">{n.title}</p>
-                      <p className="font-label-sm text-label-sm text-on-surface-variant">
-                        {isScheduled(n)
-                          ? `Programmée le ${new Date(publishedAt(n)).toLocaleString("fr-FR", { dateStyle: "long", timeStyle: "short" })}`
-                          : "Brouillon"}{" "}
-                        • Par {n.author}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-sm shrink-0">
-                      <button
-                        type="button"
-                        className="font-label-sm text-label-sm text-on-surface-variant hover:text-primary"
-                        onClick={() => setEditor({ news: n })}
-                      >
-                        Modifier
-                      </button>
-                      <button
-                        type="button"
-                        className="font-label-sm text-label-sm text-error"
-                        disabled={archive.isPending}
-                        onClick={() =>
-                          window.confirm(
-                            `Supprimer « ${n.title} » ? Elle ira dans les actualités archivées.`,
-                          ) && archive.mutate({ id: n.id, archived: true })
-                        }
-                      >
-                        Supprimer
-                      </button>
-                      {n.status === "brouillon" && (
-                        <button
-                          type="button"
-                          disabled={publish.isPending}
-                          className="rounded bg-primary px-sm py-1 text-on-primary font-label-sm text-label-sm disabled:opacity-50"
-                          onClick={() =>
-                            window.confirm(
-                              `Publier « ${n.title} » ? Elle sera visible par tous.`,
-                            ) && publish.mutate(n.id)
-                          }
-                        >
-                          Publier
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <h3 className="font-headline-sm text-headline-sm text-primary pt-sm">
-                Actualités publiées ({publishedRows.length} plus récentes)
-              </h3>
-              {publishedRows.length === 0 && (
-                <p className="text-body-sm text-on-surface-variant italic">
-                  Aucune actualité publiée.
-                </p>
-              )}
-              <div className="space-y-xs">
-                {publishedRows.map((n) => (
-                  <div
-                    key={n.id}
-                    className="flex flex-wrap items-center justify-between gap-sm rounded bg-surface-container p-sm"
-                  >
-                    <div className="min-w-0">
-                      <p className="font-body-md font-bold text-primary wrap-anywhere">{n.title}</p>
-                      <p className="font-label-sm text-label-sm text-on-surface-variant">
-                        {isScheduled(n)
-                          ? `Programmée le ${new Date(publishedAt(n)).toLocaleString("fr-FR", { dateStyle: "long", timeStyle: "short" })}`
-                          : "Publiée"}{" "}
-                        • Par {n.author}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-sm shrink-0">
-                      <button
-                        type="button"
-                        className="font-label-sm text-label-sm text-on-surface-variant hover:text-primary"
-                        onClick={() => setEditor({ news: n })}
-                      >
-                        Modifier
-                      </button>
-                      <button
-                        type="button"
-                        className="font-label-sm text-label-sm text-error"
-                        disabled={archive.isPending}
-                        onClick={() =>
-                          window.confirm(
-                            `Supprimer « ${n.title} » ? Elle ira dans les actualités archivées.`,
-                          ) && archive.mutate({ id: n.id, archived: true })
-                        }
-                      >
-                        Supprimer
-                      </button>
-                      {n.status === "brouillon" && (
-                        <button
-                          type="button"
-                          disabled={publish.isPending}
-                          className="rounded bg-primary px-sm py-1 text-on-primary font-label-sm text-label-sm disabled:opacity-50"
-                          onClick={() =>
-                            window.confirm(
-                              `Publier « ${n.title} » ? Elle sera visible par tous.`,
-                            ) && publish.mutate(n.id)
-                          }
-                        >
-                          Publier
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <h3 className="font-headline-sm text-headline-sm text-primary pt-sm">
-                Actualités archivées ({archivedRows.length})
-              </h3>
-              {archivedRows.length === 0 && (
-                <p className="text-body-sm text-on-surface-variant italic">
-                  Aucune actualité archivée.
-                </p>
-              )}
-              <div className="space-y-xs">
-                {archivedRows.map((n) => (
-                  <div
-                    key={n.id}
-                    className="flex flex-wrap items-center justify-between gap-sm rounded bg-surface-container p-sm"
-                  >
-                    <div className="min-w-0">
-                      <p className="font-body-md font-bold text-primary wrap-anywhere">{n.title}</p>
-                      <p className="font-label-sm text-label-sm text-on-surface-variant">
-                        Archivée • Par {n.author}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-sm shrink-0">
-                      <button
-                        type="button"
-                        className="font-label-sm text-label-sm text-on-surface-variant hover:text-primary"
-                        disabled={archive.isPending}
-                        onClick={() => archive.mutate({ id: n.id, archived: false })}
-                      >
-                        Restaurer
-                      </button>
-                      <button
-                        type="button"
-                        className="font-label-sm text-label-sm text-error"
-                        disabled={remove.isPending}
-                        onClick={() =>
-                          window.confirm(`Supprimer définitivement « ${n.title} » ?`) && remove.mutate(n)
-                        }
-                      >
-                        Supprimer définitivement
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
           )}
 
           <MetricPanel
