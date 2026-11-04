@@ -441,6 +441,47 @@ function ActionRow({
   );
 }
 
+type Assignable = { email: string; name: string; team: string | null };
+const ownerLabel = (u: Assignable) => (u.team ? `${u.name} — ${u.team}` : u.name);
+const findOwner = (users: Assignable[] | undefined, text: string) => {
+  const t = text.trim().toLowerCase();
+  if (!t) return undefined;
+  return (users ?? []).find((u) => ownerLabel(u).toLowerCase() === t || u.name.toLowerCase() === t);
+};
+
+/** Champ de recherche du responsable : on tape le nom, les suggestions se filtrent. */
+function OwnerInput({
+  id,
+  users,
+  value,
+  onChange,
+  label,
+}: {
+  id: string;
+  users: Assignable[] | undefined;
+  value: string;
+  onChange: (v: string) => void;
+  label: string;
+}) {
+  return (
+    <>
+      <TextInput
+        list={id}
+        aria-label={label}
+        placeholder="Tape un nom…"
+        autoComplete="off"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
+      <datalist id={id}>
+        {(users ?? []).map((u) => (
+          <option key={u.email} value={ownerLabel(u)} />
+        ))}
+      </datalist>
+    </>
+  );
+}
+
 function NewActionModal({
   blocker,
   onClose,
@@ -471,9 +512,9 @@ function NewActionModal({
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
-    const person = users.data?.find((u) => u.email === owner);
+    const person = findOwner(users.data, owner);
     if (title.trim().length < 3) return setError("Décris l'action (3 caractères minimum).");
-    if (!person) return setError("Choisis la personne responsable.");
+    if (!person) return setError("Choisis la personne responsable dans la liste de suggestions.");
     if (!due) return setError("La date d'échéance est obligatoire.");
     setError(null);
     create.mutate({
@@ -498,15 +539,13 @@ function NewActionModal({
           <TextInput value={title} maxLength={200} onChange={(e) => setTitle(e.target.value)} />
         </Field>
         <Field label="Responsable (peut être d'une autre équipe)">
-          <Select value={owner} onChange={(e) => setOwner(e.target.value)}>
-            <option value="">Choisir une personne…</option>
-            {(users.data ?? []).map((u) => (
-              <option key={u.email} value={u.email}>
-                {u.name}
-                {u.team ? ` — ${u.team}` : ""}
-              </option>
-            ))}
-          </Select>
+          <OwnerInput
+            id="owner-new-action"
+            users={users.data}
+            value={owner}
+            onChange={setOwner}
+            label="Responsable"
+          />
         </Field>
         <Field label="Échéance">
           <TextInput type="date" value={due} onChange={(e) => setDue(e.target.value)} />
@@ -589,7 +628,7 @@ function NewBlockerModal({
     mutationFn: async (input: Parameters<typeof createBlocker>[0]) => {
       const id = await createBlocker(input);
       for (const d of drafts) {
-        const person = users.data?.find((u) => u.email === d.owner);
+        const person = findOwner(users.data, d.owner);
         if (!person) continue;
         await createBlockerAction({
           blocker_id: id,
@@ -615,7 +654,8 @@ function NewBlockerModal({
     for (const [i, d] of drafts.entries()) {
       if (d.title.trim().length < 3)
         return setError(`Action ${i + 1} : décris l'action (3 caractères minimum).`);
-      if (!d.owner) return setError(`Action ${i + 1} : choisis la personne responsable.`);
+      if (!findOwner(users.data, d.owner))
+        return setError(`Action ${i + 1} : choisis la personne responsable dans la liste.`);
       if (!d.due) return setError(`Action ${i + 1} : la date d'échéance est obligatoire.`);
     }
     setError(null);
@@ -700,19 +740,13 @@ function NewBlockerModal({
                 maxLength={200}
                 onChange={(e) => patchDraft(i, { title: e.target.value })}
               />
-              <Select
-                aria-label={`Responsable de l'action ${i + 1}`}
+              <OwnerInput
+                id={`owner-draft-${i}`}
+                users={users.data}
                 value={d.owner}
-                onChange={(e) => patchDraft(i, { owner: e.target.value })}
-              >
-                <option value="">Responsable…</option>
-                {(users.data ?? []).map((u) => (
-                  <option key={u.email} value={u.email}>
-                    {u.name}
-                    {u.team ? ` — ${u.team}` : ""}
-                  </option>
-                ))}
-              </Select>
+                onChange={(v) => patchDraft(i, { owner: v })}
+                label={`Responsable de l'action ${i + 1}`}
+              />
               <div className="flex gap-xs">
                 <TextInput
                   type="date"
