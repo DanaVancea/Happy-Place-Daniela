@@ -14,6 +14,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ChoisirRoleRouteImport } from './routes/choisir-role'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedGererActualitesRouteImport } from './routes/_authenticated/gerer-actualites'
 import { Route as AuthenticatedIdeesRouteImport } from './routes/_authenticated/idees'
 import { Route as AuthenticatedPointsBloquantsRouteImport } from './routes/_authenticated/points-bloquants'
 import { Route as AuthenticatedTrombiRouteImport } from './routes/_authenticated/trombi'
@@ -44,6 +45,12 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedGererActualitesRoute =
+  AuthenticatedGererActualitesRouteImport.update({
+    id: '/gerer-actualites',
+    path: '/gerer-actualites',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedIdeesRoute = AuthenticatedIdeesRouteImport.update({
   id: '/idees',
   path: '/idees',
@@ -77,6 +84,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/choisir-role': typeof ChoisirRoleRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/gerer-actualites': typeof AuthenticatedGererActualitesRoute
   '/idees': typeof AuthenticatedIdeesRoute
   '/points-bloquants': typeof AuthenticatedPointsBloquantsRoute
   '/trombi': typeof AuthenticatedTrombiRoute
@@ -87,6 +95,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/choisir-role': typeof ChoisirRoleRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/gerer-actualites': typeof AuthenticatedGererActualitesRoute
   '/idees': typeof AuthenticatedIdeesRoute
   '/points-bloquants': typeof AuthenticatedPointsBloquantsRoute
   '/trombi': typeof AuthenticatedTrombiRoute
@@ -100,6 +109,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/choisir-role': typeof ChoisirRoleRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/_authenticated/gerer-actualites': typeof AuthenticatedGererActualitesRoute
   '/_authenticated/idees': typeof AuthenticatedIdeesRoute
   '/_authenticated/points-bloquants': typeof AuthenticatedPointsBloquantsRoute
   '/_authenticated/trombi': typeof AuthenticatedTrombiRoute
@@ -114,6 +124,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/choisir-role'
     | '/sitemap.xml'
+    | '/gerer-actualites'
     | '/idees'
     | '/points-bloquants'
     | '/trombi'
@@ -124,6 +135,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/choisir-role'
     | '/sitemap.xml'
+    | '/gerer-actualites'
     | '/idees'
     | '/points-bloquants'
     | '/trombi'
@@ -136,6 +148,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/choisir-role'
     | '/sitemap.xml'
+    | '/_authenticated/gerer-actualites'
     | '/_authenticated/idees'
     | '/_authenticated/points-bloquants'
     | '/_authenticated/trombi'
@@ -189,6 +202,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/gerer-actualites': {
+      id: '/_authenticated/gerer-actualites'
+      path: '/gerer-actualites'
+      fullPath: '/gerer-actualites'
+      preLoaderRoute: typeof AuthenticatedGererActualitesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/idees': {
       id: '/_authenticated/idees'
       path: '/idees'
@@ -228,6 +248,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedGererActualitesRoute: typeof AuthenticatedGererActualitesRoute
   AuthenticatedIdeesRoute: typeof AuthenticatedIdeesRoute
   AuthenticatedPointsBloquantsRoute: typeof AuthenticatedPointsBloquantsRoute
   AuthenticatedTrombiRoute: typeof AuthenticatedTrombiRoute
@@ -236,6 +257,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedGererActualitesRoute: AuthenticatedGererActualitesRoute,
   AuthenticatedIdeesRoute: AuthenticatedIdeesRoute,
   AuthenticatedPointsBloquantsRoute: AuthenticatedPointsBloquantsRoute,
   AuthenticatedTrombiRoute: AuthenticatedTrombiRoute,
