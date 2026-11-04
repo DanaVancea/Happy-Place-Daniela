@@ -264,7 +264,7 @@ function BlockersPage() {
                         aria-label={`Statut de ${b.title}`}
                         value={b.status}
                         onChange={(e) => setBlocker.mutate({ id: b.id, status: e.target.value })}
-                        className="bg-transparent border border-outline-variant rounded text-xs font-label-sm text-on-surface-variant cursor-pointer"
+                        className="bg-card border-2 border-outline rounded px-sm py-xs text-body-md font-label-md font-bold text-primary cursor-pointer"
                       >
                         <option>OUVERT</option>
                         <option>EN COURS</option>
@@ -277,7 +277,7 @@ function BlockersPage() {
                         </option>
                       </select>
                     ) : (
-                      <span className="text-xs font-label-sm text-on-surface-variant">
+                      <span className="rounded border-2 border-outline px-sm py-xs text-body-md font-label-md font-bold text-primary">
                         {b.status}
                       </span>
                     )}
