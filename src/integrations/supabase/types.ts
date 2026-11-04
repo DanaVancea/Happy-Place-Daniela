@@ -111,6 +111,8 @@ export type Database = {
       blockers: {
         Row: {
           created_at: string
+          created_by: string | null
+          sensitive_team: string | null
           department: string
           description: string | null
           id: string
@@ -121,6 +123,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          created_by?: string | null
+          sensitive_team?: string | null
           department?: string
           description?: string | null
           id?: string
@@ -131,6 +135,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          created_by?: string | null
+          sensitive_team?: string | null
           department?: string
           description?: string | null
           id?: string
@@ -568,7 +574,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "manager" | "collaborateur"
-      blocker_severity: "critical" | "warning" | "info"
+      blocker_severity: "critique" | "élevée" | "moyenne" | "faible"
       blocker_status: "OUVERT" | "EN COURS" | "SURVEILLANCE" | "RÉSOLU"
       news_status: "brouillon" | "publiée"
       rejection_category:
@@ -705,7 +711,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "manager", "collaborateur"],
-      blocker_severity: ["critical", "warning", "info"],
+      blocker_severity: ["critique", "élevée", "moyenne", "faible"],
       blocker_status: ["OUVERT", "EN COURS", "SURVEILLANCE", "RÉSOLU"],
       news_status: ["brouillon", "publiée"],
       rejection_category: [

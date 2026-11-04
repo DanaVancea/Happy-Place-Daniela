@@ -45,12 +45,13 @@ export const blockerSchema = z.object({
   title: z.string().trim().min(3, "Le titre doit faire au moins 3 caractères").max(160, "160 caractères maximum"),
   description: z.string().trim().max(2000, "2000 caractères maximum"),
   department: z.string().trim().min(2, "Pôle requis").max(60, "60 caractères maximum"),
-  severity: z.enum(["critical", "warning", "info"], {
+  severity: z.enum(["critique", "élevée", "moyenne", "faible"], {
     errorMap: () => ({ message: "Sévérité invalide" }),
   }),
   status: z.enum(["OUVERT", "EN COURS", "SURVEILLANCE", "RÉSOLU"], {
     errorMap: () => ({ message: "Statut invalide" }),
   }),
+  sensitive_team: z.string().trim().max(60).nullable(),
 });
 
 export const metricSchema = z.object({

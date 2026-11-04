@@ -56,6 +56,7 @@ export type Blocker = {
   severity: string;
   status: string;
   updated_at: string;
+  sensitive_team?: string | null;
 };
 
 export type Metric = {
@@ -355,6 +356,7 @@ export type BlockerInput = {
   department: string;
   severity: string;
   status: string;
+  sensitive_team: string | null;
 };
 export type MetricInput = {
   key: string;
