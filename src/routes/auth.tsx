@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { BrandHeader } from "@/components/brand-header";
 import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/icon";
 
 // Deux façons d'entrer :
 //  - par e-mail et mot de passe, réservé aux adresses déjà dans la liste des utilisateurs (nécessaire
@@ -61,6 +62,46 @@ const flag = {
     }
   },
 };
+
+/** Champ mot de passe avec un bouton pour afficher / masquer ce qui est saisi. */
+function PasswordField({
+  label,
+  value,
+  onChange,
+  autoComplete,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  autoComplete: string;
+}) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <div>
+      <label className={labelCls}>
+        {label}
+        <div className="relative">
+          <input
+            type={visible ? "text" : "password"}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            autoComplete={autoComplete}
+            className={`${inputCls} pr-12`}
+          />
+          <button
+            type="button"
+            onClick={() => setVisible((v) => !v)}
+            aria-label={visible ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+            aria-pressed={visible}
+            className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-on-surface-variant hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            <Icon name={visible ? "visibility_off" : "visibility"} />
+          </button>
+        </div>
+      </label>
+    </div>
+  );
+}
 
 type Mode = "login" | "lien" | "lien-envoye" | "mot-de-passe";
 
@@ -238,26 +279,18 @@ function EntreePage() {
               <p className="font-body-md text-body-md text-on-surface">
                 Choisis ton mot de passe. Tu l'utiliseras avec ton adresse e-mail pour te connecter.
               </p>
-              <label className={labelCls}>
-                Nouveau mot de passe
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  autoComplete="new-password"
-                  className={inputCls}
-                />
-              </label>
-              <label className={labelCls}>
-                Confirmer le mot de passe
-                <input
-                  type="password"
-                  value={password2}
-                  onChange={(e) => setPassword2(e.target.value)}
-                  autoComplete="new-password"
-                  className={inputCls}
-                />
-              </label>
+              <PasswordField
+                label="Nouveau mot de passe"
+                value={password}
+                onChange={setPassword}
+                autoComplete="new-password"
+              />
+              <PasswordField
+                label="Confirmer le mot de passe"
+                value={password2}
+                onChange={setPassword2}
+                autoComplete="new-password"
+              />
               <p className="font-body-sm text-body-sm text-on-surface-variant">
                 {MIN_PASSWORD} caractères minimum.
               </p>
@@ -296,16 +329,12 @@ function EntreePage() {
             <>
               <form onSubmit={login} className="mt-md space-y-sm" noValidate>
                 {emailField}
-                <label className={labelCls}>
-                  Mot de passe
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    autoComplete="current-password"
-                    className={inputCls}
-                  />
-                </label>
+                <PasswordField
+                  label="Mot de passe"
+                  value={password}
+                  onChange={setPassword}
+                  autoComplete="current-password"
+                />
                 <Button type="submit" disabled={busy} className={primaryBtn}>
                   {busy ? "CONNEXION…" : "ME CONNECTER"}
                 </Button>
