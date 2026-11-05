@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { BrandHeader } from "@/components/brand-header";
 import { Icon } from "@/components/icon";
 import { signOut } from "@/lib/auth";
+import { ONBOARDING_EVENT } from "@/lib/onboarding";
 import { canModerate, fetchIdeas, fetchMyTeams } from "@/lib/ideas";
 import { fetchDepartureBanner } from "@/lib/users-admin";
 
@@ -146,6 +147,13 @@ export function AppShell({
               {email} · {ROLE_LABELS[role ?? ""] ?? ""}
             </span>
             {actions}
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new Event(ONBOARDING_EVENT))}
+              className="flex items-center gap-xs rounded px-md py-xs border border-primary bg-transparent text-primary font-label-md text-label-md hover:bg-surface-container focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            >
+              <Icon name="help" /> AIDE
+            </button>
             <button
               onClick={() => signOut()}
               className="flex items-center gap-xs rounded px-md py-xs border border-primary bg-transparent text-primary font-label-md text-label-md hover:bg-surface-container"
