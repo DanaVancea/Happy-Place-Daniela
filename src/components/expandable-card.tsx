@@ -19,7 +19,7 @@ export function CharCounter({ value, max, min }: { value: string; max: number; m
   const under = min !== undefined && n > 0 && n < min;
   const fmt = (x: number) => x.toLocaleString("fr-FR");
   return (
-    <div className="mt-1 text-[11px] font-label-sm" aria-live="polite">
+    <div className="mt-1 text-xs font-label-sm" aria-live="polite">
       <p className={`text-right ${over ? "text-error font-bold" : "text-on-surface-variant"}`}>
         {fmt(n)} / {fmt(max)}
       </p>

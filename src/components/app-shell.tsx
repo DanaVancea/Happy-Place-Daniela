@@ -152,7 +152,7 @@ export function AppShell({
               onClick={() => window.dispatchEvent(new Event(ONBOARDING_EVENT))}
               className="flex items-center gap-xs rounded px-md py-xs border border-primary bg-transparent text-primary font-label-md text-label-md hover:bg-surface-container focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             >
-              <Icon name="help" /> VISITE GUIDÉE
+              <Icon name="help" /> AIDE
             </button>
             <button
               onClick={() => signOut()}

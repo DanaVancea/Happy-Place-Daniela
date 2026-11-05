@@ -199,7 +199,7 @@ function NewsPage() {
               <button
                 type="button"
                 onClick={() => marks.toggleRead(n.id)}
-                className="rounded border border-primary px-xs py-0.5 text-[11px] font-label-sm text-primary hover:bg-surface-container"
+                className="rounded border border-primary px-xs py-0.5 text-xs font-label-sm text-primary hover:bg-surface-container"
               >
                 Marquer comme lu
               </button>
@@ -373,7 +373,7 @@ function NewsPage() {
                   .map((k) => (
                     <span
                       key={k}
-                      className={`rounded px-xs py-0.5 text-[11px] font-label-sm ${STATUS_STYLE[k]}`}
+                      className={`rounded px-xs py-0.5 text-xs font-label-sm ${STATUS_STYLE[k]}`}
                     >
                       {summary[k]} {STATUS_LABELS[k].toLowerCase()}
                     </span>

@@ -10,7 +10,7 @@ import {
 
 /**
  * Parcours d'accueil en 4 écrans : s'ouvre seul à la première connexion (état stocké en base),
- * se relance depuis le lien « Visite guidée », et peut être passé à tout moment.
+ * se relance depuis le lien « Aide », et peut être passé à tout moment.
  */
 export function OnboardingTour({
   userId,

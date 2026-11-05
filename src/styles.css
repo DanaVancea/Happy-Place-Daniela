@@ -114,7 +114,7 @@
   --error: oklch(0.53 0.19 25);
   --error-container: oklch(0.9 0.05 25);
   --on-error-container: oklch(0.35 0.14 25);
-  --success: oklch(0.55 0.13 150);
+  --success: oklch(0.5 0.13 150);
   --outline: oklch(0.45 0.008 285);
   --outline-variant: oklch(0.92 0.006 100);
   --surface: oklch(0.98 0.003 90);
