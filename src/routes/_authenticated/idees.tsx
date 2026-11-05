@@ -533,7 +533,7 @@ function IdeasPage() {
 function StatusBadge({ status }: { status: IdeaStatus }) {
   return (
     <span
-      className={`rounded px-xs py-[2px] font-label-sm text-[10px] uppercase whitespace-nowrap ${STATUS_STYLE[status]}`}
+      className={`rounded px-xs py-[2px] font-label-sm text-xs uppercase whitespace-nowrap ${STATUS_STYLE[status]}`}
     >
       {IDEA_STATUS_LABEL[status]}
     </span>
@@ -547,7 +547,7 @@ function IdeaMeta({ idea, hideAuthor }: { idea: Idea; hideAuthor?: boolean }) {
         <p className="font-body-sm text-primary font-bold wrap-anywhere">
           {hideAuthor ? idea.team : idea.author_name}
         </p>
-        <p className="text-[10px] text-on-surface-variant font-label-sm wrap-anywhere">
+        <p className="text-xs text-on-surface-variant font-label-sm wrap-anywhere">
           {hideAuthor ? "" : `${idea.team} • `}
           {timeAgo(idea.created_at)}
           {idea.status === "remontée" && idea.moderated_by_name
@@ -729,7 +729,7 @@ function IdeaDialog({
                     >
                       <div className="flex items-center justify-between gap-sm">
                         <p className="font-body-sm text-primary font-bold">{c.author_name}</p>
-                        <span className="text-[10px] text-on-surface-variant font-label-sm whitespace-nowrap">
+                        <span className="text-xs text-on-surface-variant font-label-sm whitespace-nowrap">
                           {timeAgo(c.created_at)}
                         </span>
                       </div>

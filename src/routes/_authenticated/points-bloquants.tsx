@@ -174,7 +174,7 @@ function BlockersPage() {
       <section className="bg-surface-container-lowest border border-outline-variant rounded-lg p-md">
         <div className="space-y-md">
           <div className="flex flex-wrap items-end gap-sm">
-            <label className="text-[11px] font-label-sm text-on-surface-variant uppercase">
+            <label className="text-xs font-label-sm text-on-surface-variant uppercase">
               Criticité
               <select
                 value={filterSeverity}
@@ -189,7 +189,7 @@ function BlockersPage() {
                 ))}
               </select>
             </label>
-            <label className="text-[11px] font-label-sm text-on-surface-variant uppercase">
+            <label className="text-xs font-label-sm text-on-surface-variant uppercase">
               Équipe concernée
               <select
                 value={filterTeam}
@@ -247,7 +247,7 @@ function BlockersPage() {
                               severity: e.target.value as (typeof SEVERITIES)[number],
                             })
                           }
-                          className={`rounded border px-xs py-0.5 text-[11px] font-label-sm ${sev.badge}`}
+                          className={`rounded border px-xs py-0.5 text-xs font-label-sm ${sev.badge}`}
                         >
                           {SEVERITIES.map((s) => (
                             <option key={s} value={s}>
@@ -257,17 +257,17 @@ function BlockersPage() {
                         </select>
                       ) : (
                         <span
-                          className={`inline-flex items-center gap-1 rounded border px-xs py-0.5 text-[11px] font-label-sm ${sev.badge}`}
+                          className={`inline-flex items-center gap-1 rounded border px-xs py-0.5 text-xs font-label-sm ${sev.badge}`}
                         >
                           <Icon name={sev.icon} className="text-[14px]" />
                           {sev.rank} · {sev.label}
                         </span>
                       )}
-                      <span className="rounded text-[11px] font-label-sm bg-surface-container-highest px-xs py-0.5">
+                      <span className="rounded text-xs font-label-sm bg-surface-container-highest px-xs py-0.5">
                         Équipe : {b.department}
                       </span>
                       {b.sensitive_team && (
-                        <span className="inline-flex items-center gap-1 rounded border border-error bg-error-container text-on-error-container px-xs py-0.5 text-[11px] font-label-sm">
+                        <span className="inline-flex items-center gap-1 rounded border border-error bg-error-container text-on-error-container px-xs py-0.5 text-xs font-label-sm">
                           <Icon name="lock" className="text-[14px]" /> Sujet sensible
                         </span>
                       )}
@@ -276,7 +276,7 @@ function BlockersPage() {
                     <p className="text-body-sm text-on-surface-variant wrap-anywhere">
                       {b.description}
                     </p>
-                    <span className="text-[11px] font-label-sm text-on-surface-variant">
+                    <span className="text-xs font-label-sm text-on-surface-variant">
                       Mis à jour {timeAgo(b.updated_at)}
                     </span>
                   </div>
@@ -346,7 +346,7 @@ function BlockersPage() {
                 )}
 
                 {isAdmin && (
-                  <label className="flex flex-wrap items-center gap-xs text-[11px] font-label-sm text-on-surface-variant">
+                  <label className="flex flex-wrap items-center gap-xs text-xs font-label-sm text-on-surface-variant">
                     Visibilité :
                     <select
                       value={b.sensitive_team ? "prive" : "public"}
@@ -492,7 +492,7 @@ function ActionRow({
         >
           {a.title}
         </span>
-        <span className="text-[11px] font-label-sm text-on-surface-variant">
+        <span className="text-xs font-label-sm text-on-surface-variant">
           · {a.owner_name} · échéance {dateFr(a.due_date)}
           {late ? " · EN RETARD" : ""}
         </span>
@@ -671,7 +671,7 @@ function History({ blockerId }: { blockerId: string }) {
         type="button"
         aria-expanded={open}
         onClick={() => setOpen(!open)}
-        className="text-[11px] font-label-sm text-on-surface-variant underline"
+        className="text-xs font-label-sm text-on-surface-variant underline"
       >
         {open ? "Masquer l'historique" : "Voir l'historique des modifications"}
       </button>

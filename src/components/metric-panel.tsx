@@ -36,7 +36,7 @@ function TargetLine({ m, large }: { m: Metric; large?: boolean }) {
   return (
     <div className="space-y-0.5">
       <p
-        className={`${large ? "text-body-sm" : "text-[11px]"} font-label-sm text-on-surface-variant`}
+        className={`${large ? "text-body-sm" : "text-xs"} font-label-sm text-on-surface-variant`}
       >
         Cible :{" "}
         <span className="text-primary font-bold">{formatMetricValue(m.target!, m.unit)}</span>
@@ -52,7 +52,7 @@ function TargetLine({ m, large }: { m: Metric; large?: boolean }) {
         <div className="h-full rounded bg-primary" style={{ width: `${p.ratio * 100}%` }} />
       </div>
       <span
-        className={`inline-block whitespace-nowrap rounded px-xs py-0.5 text-[11px] font-label-sm ${STATUS_STYLE[p.status]}`}
+        className={`inline-block whitespace-nowrap rounded px-xs py-0.5 text-xs font-label-sm ${STATUS_STYLE[p.status]}`}
       >
         {STATUS_LABELS[p.status]}
       </span>
@@ -126,7 +126,7 @@ export function MetricTile({
       <p className="font-display text-[28px] leading-tight text-primary">
         {formatMetricValue(m.value, m.unit)}
       </p>
-      <p className={`text-[11px] font-label-sm ${trendClass(m)}`}>
+      <p className={`text-xs font-label-sm ${trendClass(m)}`}>
         {TREND_LABELS[m.trend]}
         {deltaText(m) && ` · ${deltaText(m)}`}
       </p>
@@ -134,7 +134,7 @@ export function MetricTile({
       <TargetLine m={m} />
       {m.updated_at && (
         <p
-          className={`text-[11px] font-label-sm ${stale ? "text-error" : "text-on-surface-variant"}`}
+          className={`text-xs font-label-sm ${stale ? "text-error" : "text-on-surface-variant"}`}
         >
           {stale
             ? `Non mis à jour depuis ${age} jours`
@@ -382,13 +382,13 @@ export function MetricPanel({
                       key={c.label}
                       className="p-sm bg-card border border-outline-variant rounded"
                     >
-                      <dt className="font-label-sm text-[11px] text-on-surface-variant uppercase">
+                      <dt className="font-label-sm text-xs text-on-surface-variant uppercase">
                         {c.label}
                       </dt>
                       <dd className="font-label-md text-label-md text-primary">
                         {formatMetricValue(c.value, m.unit)}
                       </dd>
-                      <dd className={`text-[11px] font-label-sm ${c.cls}`}>{c.delta}</dd>
+                      <dd className={`text-xs font-label-sm ${c.cls}`}>{c.delta}</dd>
                     </div>
                   ))}
                 </dl>

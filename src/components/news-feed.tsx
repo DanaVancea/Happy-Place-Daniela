@@ -101,7 +101,7 @@ export function ReadButton({ id, marks }: { id: string; marks: NewsMarks }) {
         e.stopPropagation();
         marks.toggleRead(id);
       }}
-      className={`flex items-center gap-1 rounded border px-xs py-0.5 text-[11px] font-label-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+      className={`flex items-center gap-1 rounded border px-xs py-0.5 text-xs font-label-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
         on
           ? "border-primary bg-primary text-on-primary"
           : "border-primary bg-transparent text-primary hover:bg-surface-container"
