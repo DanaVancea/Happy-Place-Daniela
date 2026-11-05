@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 // Nouvelle table non présente dans les types générés : client non typé.
 const db = supabase as unknown as SupabaseClient;
 
-/** Événement émis par le lien « Aide » pour relancer le parcours. */
+/** Événement émis par le lien « Visite guidée » pour relancer le parcours. */
 export const ONBOARDING_EVENT = "happy-place:onboarding";
 
 export type OnboardingRole = "collaborateur" | "manager" | "admin";
@@ -97,7 +97,7 @@ export function stepsForRole(role: string | null | undefined): OnboardingStep[] 
             "Complète ton profil dans le Trombi.",
             "Lis les dernières actualités.",
             "Dépose ta première idée.",
-            "Besoin de revoir ce parcours ? Utilise le lien « Aide » en haut de page.",
+            "Besoin de revoir ce parcours ? Utilise le lien « Visite guidée » en haut de page.",
           ],
         }
       : {
@@ -108,7 +108,7 @@ export function stepsForRole(role: string | null | undefined): OnboardingStep[] 
           points: [
             "Un compteur sur « Boîte à idées » t'indique ce qui est à traiter.",
             "Passe au moins une fois par semaine.",
-            "Besoin de revoir ce parcours ? Utilise le lien « Aide » en haut de page.",
+            "Besoin de revoir ce parcours ? Utilise le lien « Visite guidée » en haut de page.",
           ],
         };
 
