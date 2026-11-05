@@ -81,6 +81,8 @@ Pour partager l'app avec ton groupe : onglet **Ports** → clic droit sur la lig
 | **Manager** | Valide ou refuse les demandes des équipes qu'il manage, rédige des actualités (en brouillon), suit les points bloquants. |
 | **Admin** | Gère tout : contenus, indicateurs, équipes et utilisateurs, directement depuis les onglets de l'accueil. |
 
+**Visite guidée.** À la première connexion, un parcours en 4 écrans présente l'app selon ton rôle. Tu peux le relancer à tout moment avec le bouton « Visite guidée » en haut de page.
+
 Ces droits sont appliqués **par la base elle-même** (règles RLS de Supabase), pas seulement par l'interface.
 
 La base contient aussi dix membres fictifs de Bigger Boat (`@biggerboat.example`). Ils n'ont pas de compte : ils peuplent l'écran des utilisateurs et managent certaines équipes.
